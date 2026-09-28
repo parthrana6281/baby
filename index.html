@@ -3,28 +3,29 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Trick or treat? We have a treat for you</title>
+<title>Something is coming…</title>
 
-<!-- Link preview when you send the URL -->
-<meta name="description" content="Scratch the pumpkin to find out our news. Happy Halloween!">
-<meta property="og:title" content="Trick or treat? We have a treat for you 🎃">
-<meta property="og:description" content="Scratch the pumpkin to find out our news. Happy Halloween!">
+<meta name="description" content="Enter if you dare. Scratch the pumpkin to find out our news. Happy Halloween!">
+<meta property="og:title" content="Something is coming… 🎃">
+<meta property="og:description" content="Enter if you dare. Scratch the pumpkin to find out our news.">
 <meta property="og:type" content="website">
-<meta name="theme-color" content="#140c24">
+<meta name="theme-color" content="#07040b">
 
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎃</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Creepster&family=IM+Fell+English:ital@0;1&family=Figtree:wght@400;600;700&display=swap" rel="stylesheet">
 
 <style>
 :root{
-  --midnight:#140c24;
-  --plum:#2b1644;
-  --pumpkin:#ff7a1a;
-  --candle:#ffb547;
-  --bone:#f6ecd8;
-  --muted:rgba(246,236,216,.7);
+  --void:#07040b;
+  --bruise:#1d0a1f;
+  --blood:#9e0f12;
+  --ember:#ff5a1f;
+  --candle:#ffb13b;
+  --bone:#f3e7d3;
+  --muted:rgba(243,231,211,.66);
+  --scary:"Creepster", "IM Fell English", Georgia, serif;
   --serif:"IM Fell English", Georgia, "Times New Roman", serif;
   --sans:"Figtree", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
@@ -33,197 +34,287 @@
 html,body{height:100%}
 body{
   font-family:var(--sans);color:var(--bone);
-  background:radial-gradient(110% 70% at 30% 0%, #3a1c55 0%, var(--plum) 35%, var(--midnight) 75%, #0a0615 100%);
-  background-color:var(--midnight);
+  background:radial-gradient(100% 70% at 25% 0%, #3a0c1a 0%, var(--bruise) 38%, var(--void) 78%);
+  background-color:var(--void);
   overflow-x:hidden;-webkit-font-smoothing:antialiased;
 }
+body.locked{overflow:hidden}
+
+/* ---------- Gate (starts the music) ---------- */
+#gate{
+  position:fixed;inset:0;z-index:100;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:26px;padding:24px;text-align:center;
+  background:radial-gradient(60% 50% at 50% 50%, #1a0610 0%, #030104 75%);
+  transition:opacity 1.4s ease, visibility 1.4s;
+}
+#gate.gone{opacity:0;visibility:hidden}
+#gate .line{font-family:var(--serif);font-style:italic;font-size:clamp(1.15rem,3.6vw,1.6rem);color:var(--muted);max-width:24ch;line-height:1.4;
+  animation:breathe 4s ease-in-out infinite}
+@keyframes breathe{0%,100%{opacity:.55}50%{opacity:1}}
+#enterBtn{
+  font:400 clamp(1.6rem,6vw,2.3rem) var(--scary);letter-spacing:.04em;color:var(--bone);
+  background:transparent;border:1px solid rgba(255,90,31,.55);border-radius:14px;padding:16px 30px;cursor:pointer;
+  text-shadow:0 0 14px rgba(255,90,31,.9);box-shadow:0 0 30px -6px rgba(255,90,31,.6), inset 0 0 24px -8px rgba(255,90,31,.5);
+  transition:transform .2s, box-shadow .2s;
+}
+#enterBtn:hover{transform:scale(1.04);box-shadow:0 0 44px -4px rgba(255,90,31,.85), inset 0 0 30px -8px rgba(255,90,31,.7)}
+#enterBtn:focus-visible{outline:2px solid var(--candle);outline-offset:4px}
+#gate .note{font-size:.88rem;color:rgba(243,231,211,.45)}
+.gate-eyes{display:flex;gap:18px}
+.gate-eyes i{width:16px;height:7px;border-radius:50%;background:#ff3b1a;box-shadow:0 0 12px 3px rgba(255,40,10,.8);animation:blink 5s infinite}
 
 /* ---------- Scenery ---------- */
-#sky,#fx{position:fixed;inset:0;width:100%;height:100%;pointer-events:none}
+#sky,#bolt,#fx{position:fixed;inset:0;width:100%;height:100%;pointer-events:none}
 #sky{z-index:0}
-#fx{z-index:50}
+#bolt{z-index:1}
+#fx{z-index:60}
+#flash{position:fixed;inset:0;z-index:45;pointer-events:none;background:#dfe6ff;opacity:0}
 
 .moon{
   position:fixed;z-index:1;pointer-events:none;
-  top:clamp(20px,5vh,56px);left:clamp(14px,7vw,110px);
-  width:clamp(110px,18vw,190px);aspect-ratio:1;border-radius:50%;
+  top:clamp(18px,5vh,56px);left:clamp(14px,7vw,110px);
+  width:clamp(120px,20vw,210px);aspect-ratio:1;border-radius:50%;
   background:
-    radial-gradient(circle at 30% 35%, rgba(205,170,110,.35) 0 9%, transparent 10%),
-    radial-gradient(circle at 62% 60%, rgba(205,170,110,.3) 0 12%, transparent 13%),
-    radial-gradient(circle at 70% 28%, rgba(205,170,110,.25) 0 6%, transparent 7%),
-    radial-gradient(circle at 40% 72%, rgba(205,170,110,.22) 0 5%, transparent 6%),
-    radial-gradient(circle at 40% 40%, #fff6dc, #f7dfa6 60%, #eec67c);
-  box-shadow:0 0 60px 10px rgba(255,190,90,.35), 0 0 180px 40px rgba(255,140,40,.18);
+    radial-gradient(circle at 30% 35%, rgba(90,10,10,.35) 0 9%, transparent 10%),
+    radial-gradient(circle at 62% 60%, rgba(90,10,10,.3) 0 12%, transparent 13%),
+    radial-gradient(circle at 70% 28%, rgba(90,10,10,.28) 0 6%, transparent 7%),
+    radial-gradient(circle at 40% 72%, rgba(90,10,10,.25) 0 5%, transparent 6%),
+    radial-gradient(circle at 42% 40%, #ffc2a0, #e0502c 55%, #7a1410);
+  box-shadow:0 0 70px 14px rgba(220,40,20,.4), 0 0 200px 60px rgba(160,10,10,.22);
 }
+.cloud{position:fixed;z-index:1;pointer-events:none;width:clamp(260px,45vw,560px);height:90px;border-radius:50%;
+  background:radial-gradient(closest-side, rgba(10,4,12,.95), rgba(10,4,12,0));filter:blur(6px);
+  animation:cloud linear infinite}
+.cloud.a{top:clamp(40px,9vh,110px);animation-duration:55s}
+.cloud.b{top:clamp(90px,17vh,190px);animation-duration:80s;animation-delay:-35s;opacity:.8}
+@keyframes cloud{from{transform:translateX(-60vw)}to{transform:translateX(130vw)}}
 
-.bat{position:fixed;z-index:1;pointer-events:none;width:44px;left:-60px;fill:#0b0614;animation:fly linear infinite}
-.bat svg{width:100%;display:block;animation:flap .28s ease-in-out infinite alternate;transform-origin:center}
-@keyframes flap{from{transform:scaleY(1)}to{transform:scaleY(.35)}}
+.bat{position:fixed;z-index:2;pointer-events:none;left:-60px;fill:#050208;animation:fly linear infinite}
+.bat svg{width:100%;display:block;animation:flap .25s ease-in-out infinite alternate}
+@keyframes flap{from{transform:scaleY(1)}to{transform:scaleY(.3)}}
 @keyframes fly{
-  0%{transform:translate(0,0)}
-  25%{transform:translate(28vw,-4vh)}
-  50%{transform:translate(55vw,3vh)}
-  75%{transform:translate(82vw,-5vh)}
-  100%{transform:translate(115vw,1vh)}
+  0%{transform:translate(0,0)}25%{transform:translate(28vw,-5vh)}50%{transform:translate(55vw,4vh)}
+  75%{transform:translate(82vw,-6vh)}100%{transform:translate(115vw,1vh)}
 }
 
-.ground{position:fixed;left:0;right:0;bottom:0;z-index:1;pointer-events:none;height:clamp(110px,20vh,190px)}
-.ground svg{width:100%;height:100%;display:block}
-.fog{position:fixed;left:-20%;right:-20%;bottom:-40px;height:160px;z-index:1;pointer-events:none;
-  background:radial-gradient(50% 60% at 30% 60%, rgba(200,180,230,.16), transparent 70%),
-             radial-gradient(40% 50% at 75% 70%, rgba(200,180,230,.13), transparent 70%);
-  filter:blur(8px);animation:drift 22s ease-in-out infinite alternate}
-.fog.two{animation-duration:30s;animation-direction:alternate-reverse;opacity:.8;bottom:-10px}
-@keyframes drift{from{transform:translateX(-6%)}to{transform:translateX(6%)}}
+.ghost{position:fixed;z-index:1;pointer-events:none;top:30vh;right:-120px;width:90px;opacity:0;
+  animation:haunt 28s ease-in-out 6s infinite}
+.ghost svg{display:block;animation:bob 3s ease-in-out infinite}
+@keyframes haunt{
+  0%{transform:translateX(0);opacity:0}8%{opacity:.4}45%{opacity:.25}
+  60%{transform:translateX(-120vw);opacity:0}100%{transform:translateX(-120vw);opacity:0}
+}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-14px)}}
 
-.spider{position:fixed;top:0;right:clamp(20px,10vw,140px);z-index:3;pointer-events:none;
-  transform-origin:top center;animation:dangle 5s ease-in-out infinite}
-.spider svg{display:block}
-@keyframes dangle{0%,100%{transform:translateY(-18px) rotate(3deg)}50%{transform:translateY(8px) rotate(-3deg)}}
+.eyes{position:fixed;z-index:3;pointer-events:none;display:flex;gap:9px;opacity:0;transition:opacity 1.2s}
+.eyes.on{opacity:1}
+.eyes i{width:11px;height:5px;border-radius:50%;background:#ff2a12;box-shadow:0 0 10px 3px rgba(255,30,10,.75);animation:blink 4s infinite}
+@keyframes blink{0%,46%,54%,100%{transform:scaleY(1)}50%{transform:scaleY(.1)}}
+
+.ground{position:fixed;left:0;right:0;bottom:0;z-index:2;pointer-events:none;height:clamp(120px,22vh,200px)}
+.ground svg{width:100%;height:100%;display:block}
+.fog{position:fixed;left:-25%;right:-25%;bottom:-40px;height:200px;z-index:2;pointer-events:none;
+  background:radial-gradient(50% 60% at 30% 60%, rgba(190,170,210,.2), transparent 70%),
+             radial-gradient(40% 50% at 75% 70%, rgba(190,170,210,.16), transparent 70%);
+  filter:blur(10px);animation:drift 20s ease-in-out infinite alternate}
+.fog.two{animation-duration:28s;animation-direction:alternate-reverse;bottom:-10px;z-index:3}
+@keyframes drift{from{transform:translateX(-7%)}to{transform:translateX(7%)}}
+
+.spider{position:fixed;top:0;right:clamp(80px,14vw,200px);z-index:4;pointer-events:none;transform-origin:top center;animation:dangle 6s ease-in-out infinite}
+@keyframes dangle{0%,100%{transform:translateY(-30px) rotate(3deg)}40%{transform:translateY(20px) rotate(-3deg)}55%{transform:translateY(-6px)}}
+
+.vignette{position:fixed;inset:0;z-index:40;pointer-events:none;
+  background:radial-gradient(75% 70% at 50% 50%, transparent 55%, rgba(0,0,0,.75) 100%);
+  animation:flickerV 7s steps(1) infinite}
+@keyframes flickerV{0%,100%{opacity:1}91%{opacity:.6}92%{opacity:1}94%{opacity:.75}95%{opacity:1}}
+
+#muteBtn{
+  position:fixed;z-index:70;top:calc(14px + env(safe-area-inset-top,0px));right:14px;
+  width:46px;height:46px;border-radius:50%;border:1px solid rgba(243,231,211,.25);
+  background:rgba(10,4,12,.6);color:var(--bone);cursor:pointer;display:none;align-items:center;justify-content:center;
+  backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)
+}
+#muteBtn.show{display:flex}
+#muteBtn:focus-visible{outline:2px solid var(--candle);outline-offset:3px}
+#muteBtn svg{width:22px;height:22px}
 
 /* ---------- Layout ---------- */
 .stage{
-  position:relative;z-index:2;min-height:100%;
+  position:relative;z-index:10;min-height:100%;
   display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:clamp(16px,2.8vh,26px);
-  padding:clamp(40px,8vh,80px) 20px clamp(120px,20vh,180px);
+  gap:clamp(14px,2.6vh,24px);
+  padding:clamp(70px,10vh,90px) 20px clamp(130px,22vh,200px);
   text-align:center;
 }
 .from{font-family:var(--serif);font-style:italic;font-size:clamp(1.05rem,2.8vw,1.25rem);color:var(--muted)}
 .from b{font-style:normal;font-weight:400;color:var(--candle)}
 h1{
-  font-family:var(--serif);font-weight:400;
-  font-size:clamp(2.2rem,7.5vw,4.2rem);line-height:1.04;letter-spacing:-.01em;max-width:14ch;
-  text-shadow:0 0 30px rgba(255,122,26,.35), 0 2px 0 rgba(0,0,0,.4);
+  font-family:var(--scary);font-weight:400;
+  font-size:clamp(2.6rem,9vw,5rem);line-height:1;letter-spacing:.02em;max-width:13ch;
+  color:#ff4a1c;
+  text-shadow:0 0 12px rgba(255,60,20,.7), 0 0 40px rgba(180,10,10,.6), 0 3px 0 #2a0204;
+  animation:flickerT 6s infinite;
 }
+@keyframes flickerT{0%,100%{opacity:1}88%{opacity:1}89%{opacity:.35}90%{opacity:1}92%{opacity:.5}93%{opacity:1}}
 
 /* ---------- Card ---------- */
 .card-wrap{position:relative;width:min(86vw,390px)}
-.card-wrap::before{
-  content:"";position:absolute;inset:-12%;z-index:-1;border-radius:50%;
-  background:radial-gradient(circle, rgba(255,140,40,.45), transparent 65%);
-  filter:blur(20px);animation:flicker 3s ease-in-out infinite;
-}
-@keyframes flicker{0%,100%{opacity:.85}40%{opacity:1}55%{opacity:.7}70%{opacity:.95}}
+.card-wrap::before{content:"";position:absolute;inset:-14%;z-index:-1;border-radius:50%;
+  background:radial-gradient(circle, rgba(255,80,20,.5), rgba(150,10,10,.25) 45%, transparent 68%);
+  filter:blur(22px);animation:candle 2.6s ease-in-out infinite}
+@keyframes candle{0%,100%{opacity:.8;transform:scale(1)}30%{opacity:1;transform:scale(1.03)}50%{opacity:.6}75%{opacity:.95}}
 .card{
-  position:relative;width:100%;aspect-ratio:1/1;border-radius:30px;overflow:hidden;
-  background:#1d1030;
-  box-shadow:0 0 0 1px rgba(255,181,71,.35), 0 0 0 7px rgba(20,12,36,.9), 0 0 0 8px rgba(255,181,71,.18),
-             0 30px 70px -18px rgba(0,0,0,.85);
+  position:relative;width:100%;aspect-ratio:1/1;border-radius:26px;overflow:hidden;background:#12060f;
+  box-shadow:0 0 0 1px rgba(255,90,31,.4), 0 0 0 7px rgba(7,4,11,.95), 0 0 0 8px rgba(158,15,18,.45),
+             0 30px 70px -18px rgba(0,0,0,.9);
   isolation:isolate;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;
 }
 .reveal{position:absolute;inset:0}
 .reveal img{width:100%;height:100%;object-fit:cover;display:block;opacity:0;transition:opacity .6s}
 .reveal img.ready{opacity:1}
 .fallback{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:8px;
-  background:radial-gradient(circle at 50% 40%, #ffd9a0, #ff9a3c 55%, #b8480c);color:#2b1644;font-family:var(--serif)}
+  background:radial-gradient(circle at 50% 40%, #ffe0b0, #ff9a3c 55%, #b8480c);color:#2a0a14;font-family:var(--serif)}
 .fallback.show{display:flex}
 .fallback .big{font-size:5.5rem;line-height:1}
 .fallback .txt{font-size:1.7rem}
 
 #scratch{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:grab;z-index:3;
-  transition:opacity 1s ease, transform 1s ease, filter 1s ease}
+  transition:opacity 1.1s ease, transform 1.1s ease, filter 1.1s ease}
 #scratch:active{cursor:grabbing}
-#scratch.gone{opacity:0;transform:scale(1.08);filter:blur(6px);pointer-events:none}
+#scratch.gone{opacity:0;transform:scale(1.1);filter:blur(8px) brightness(2);pointer-events:none}
 
-.sheen{position:absolute;inset:0;z-index:4;pointer-events:none;
-  background:linear-gradient(115deg, transparent 38%, rgba(255,230,180,.5) 50%, transparent 62%);
-  transform:translateX(-120%);animation:sheen 4s ease-in-out 1.5s infinite;mix-blend-mode:soft-light}
-.sheen.off{display:none}
-@keyframes sheen{0%{transform:translateX(-120%)}55%,100%{transform:translateX(120%)}}
-
-.hint{position:absolute;left:50%;bottom:15%;z-index:5;pointer-events:none;width:46px;height:46px;margin-left:-23px;
+.hint{position:absolute;left:50%;bottom:9%;z-index:5;pointer-events:none;width:44px;height:44px;margin-left:-22px;
   animation:swipe 2.4s ease-in-out infinite;transition:opacity .3s}
 .hint.off{opacity:0}
-@keyframes swipe{
-  0%{transform:translate(-55px,0);opacity:0}15%{opacity:1}
-  50%{transform:translate(55px,-8px)}85%{opacity:1}
-  100%{transform:translate(-55px,0);opacity:0}
-}
+@keyframes swipe{0%{transform:translate(-55px,0);opacity:0}15%{opacity:1}50%{transform:translate(55px,-8px)}85%{opacity:1}100%{transform:translate(-55px,0);opacity:0}}
 
 /* ---------- Progress ---------- */
 .meter{display:flex;align-items:center;gap:12px;width:min(86vw,390px);color:var(--muted);font-size:.9rem}
-.track{flex:1;height:5px;border-radius:5px;background:rgba(255,255,255,.1);overflow:hidden}
+.track{flex:1;height:5px;border-radius:5px;background:rgba(255,255,255,.08);overflow:hidden}
 .track span{display:block;height:100%;width:0;border-radius:5px;
-  background:linear-gradient(90deg,#b8480c,var(--pumpkin),var(--candle));
-  box-shadow:0 0 10px rgba(255,122,26,.8);transition:width .25s}
+  background:linear-gradient(90deg,#5a0508,var(--blood),var(--ember));box-shadow:0 0 10px rgba(255,40,20,.9);transition:width .25s}
 .meter output{min-width:3.2ch;text-align:right;font-variant-numeric:tabular-nums}
 .meter.done{opacity:0;height:0;margin:-14px 0;overflow:hidden;transition:all .5s}
 
 /* ---------- After reveal ---------- */
 .after{display:flex;flex-direction:column;align-items:center;gap:10px;
   max-height:0;opacity:0;overflow:hidden;transform:translateY(14px);
-  transition:max-height .9s ease, opacity .9s ease .25s, transform .9s ease .25s}
-.after.show{max-height:460px;opacity:1;transform:none}
+  transition:max-height .9s ease, opacity .9s ease .3s, transform .9s ease .3s}
+.after.show{max-height:480px;opacity:1;transform:none}
 .after h2{
   font-family:var(--serif);font-weight:400;font-size:clamp(2rem,7vw,3.3rem);line-height:1.05;
-  background:linear-gradient(180deg,var(--bone) 10%,var(--candle) 60%,var(--pumpkin));
+  background:linear-gradient(180deg,#fff7e6 10%,var(--candle) 60%,var(--ember));
   -webkit-background-clip:text;background-clip:text;color:transparent;
-  filter:drop-shadow(0 0 18px rgba(255,122,26,.45));
+  filter:drop-shadow(0 0 18px rgba(255,140,40,.5));
 }
 .after p{font-family:var(--serif);font-style:italic;font-size:clamp(1.1rem,3vw,1.35rem);color:var(--muted);max-width:32ch;line-height:1.5}
 .actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:14px}
-button{font:600 .98rem var(--sans);border:0;border-radius:999px;padding:13px 22px;cursor:pointer;transition:transform .15s, filter .2s, background .2s}
-button:active{transform:scale(.97)}
-button:focus-visible{outline:2px solid var(--candle);outline-offset:3px}
-.primary{background:linear-gradient(180deg,var(--candle),var(--pumpkin));color:#2a1204;box-shadow:0 8px 24px -8px rgba(255,122,26,.8)}
+.actions button{font:600 .98rem var(--sans);border:0;border-radius:999px;padding:13px 22px;cursor:pointer;transition:transform .15s, filter .2s, background .2s}
+.actions button:active{transform:scale(.97)}
+.actions button:focus-visible{outline:2px solid var(--candle);outline-offset:3px}
+.primary{background:linear-gradient(180deg,var(--candle),var(--ember));color:#2a0a04;box-shadow:0 8px 24px -8px rgba(255,90,31,.8)}
 .primary:hover{filter:brightness(1.08)}
-.ghost{background:rgba(255,255,255,.07);color:var(--bone);box-shadow:inset 0 0 0 1px rgba(246,236,216,.25)}
-.ghost:hover{background:rgba(255,255,255,.13)}
+.ghostBtn{background:rgba(255,255,255,.06);color:var(--bone);box-shadow:inset 0 0 0 1px rgba(243,231,211,.25)}
+.ghostBtn:hover{background:rgba(255,255,255,.12)}
 
-.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));z-index:60;
-  transform:translate(-50%,20px);opacity:0;background:var(--bone);color:var(--midnight);
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));z-index:80;
+  transform:translate(-50%,20px);opacity:0;background:var(--bone);color:var(--void);
   font-weight:600;font-size:.92rem;padding:11px 18px;border-radius:999px;transition:all .3s;pointer-events:none}
 .toast.show{opacity:1;transform:translate(-50%,0)}
 
-@media (max-width:520px){ .spider{display:none} }
+/* After the reveal, the night softens */
+body.sweet .vignette{animation:none;opacity:.45;transition:opacity 2s}
+body.sweet h1{animation:none}
+body.sweet .eyes{display:none}
+
+@media (max-width:520px){ .spider{right:70px;transform:scale(.8)} }
 @media (prefers-reduced-motion: reduce){
-  .bat,.fog,.spider,.sheen,.hint,.card-wrap::before{animation:none}
-  .bat,.sheen{display:none}
+  .bat,.fog,.spider,.hint,.card-wrap::before,.cloud,.ghost,.vignette,h1,.eyes i,#gate .line{animation:none}
+  .bat,.ghost,.cloud{display:none}
 }
 </style>
 </head>
-<body>
+<body class="locked">
+
+<!-- ===== Entry gate (needed so the browser allows music) ===== -->
+<div id="gate">
+  <div class="gate-eyes" aria-hidden="true"><i></i><i></i></div>
+  <p class="line">Some secrets are better kept in the dark…</p>
+  <button id="enterBtn">Enter if you dare</button>
+  <p class="note">Turn your sound on 🔊</p>
+</div>
 
 <canvas id="sky" aria-hidden="true"></canvas>
+<canvas id="bolt" aria-hidden="true"></canvas>
 <div class="moon" aria-hidden="true"></div>
+<div class="cloud a" aria-hidden="true"></div>
+<div class="cloud b" aria-hidden="true"></div>
 <div id="bats" aria-hidden="true"></div>
 
-<div class="spider" aria-hidden="true">
-  <svg width="40" height="150" viewBox="0 0 40 150">
-    <line x1="20" y1="0" x2="20" y2="118" stroke="rgba(246,236,216,.45)" stroke-width="1"/>
-    <g stroke="#0b0614" stroke-width="2.2" fill="none" stroke-linecap="round">
-      <path d="M14 124 L4 116 L1 108"/><path d="M14 128 L3 128 L0 122"/><path d="M14 132 L4 138 L2 146"/>
-      <path d="M26 124 L36 116 L39 108"/><path d="M26 128 L37 128 L40 122"/><path d="M26 132 L36 138 L38 146"/>
-    </g>
-    <ellipse cx="20" cy="130" rx="8" ry="10" fill="#0b0614"/>
-    <circle cx="20" cy="120" r="5.5" fill="#0b0614"/>
-    <circle cx="18" cy="119.5" r="1.3" fill="#ff7a1a"/><circle cx="22" cy="119.5" r="1.3" fill="#ff7a1a"/>
+<div class="ghost" aria-hidden="true">
+  <svg viewBox="0 0 90 110" width="90">
+    <path d="M45 4 C20 4 8 24 8 48 V100 L20 90 L32 102 L45 90 L58 102 L70 90 L82 100 V48 C82 24 70 4 45 4Z" fill="#e8e2f0"/>
+    <ellipse cx="32" cy="44" rx="6" ry="9" fill="#07040b"/><ellipse cx="58" cy="44" rx="6" ry="9" fill="#07040b"/>
+    <ellipse cx="45" cy="68" rx="8" ry="11" fill="#07040b"/>
   </svg>
 </div>
+
+<div class="spider" aria-hidden="true">
+  <svg width="54" height="190" viewBox="0 0 54 190">
+    <line x1="27" y1="0" x2="27" y2="150" stroke="rgba(243,231,211,.4)" stroke-width="1"/>
+    <g stroke="#050208" stroke-width="2.8" fill="none" stroke-linecap="round">
+      <path d="M19 158 L6 146 L2 134"/><path d="M19 163 L4 162 L0 154"/><path d="M19 168 L5 176 L3 188"/><path d="M20 172 L10 184"/>
+      <path d="M35 158 L48 146 L52 134"/><path d="M35 163 L50 162 L54 154"/><path d="M35 168 L49 176 L51 188"/><path d="M34 172 L44 184"/>
+    </g>
+    <ellipse cx="27" cy="167" rx="10" ry="13" fill="#050208"/>
+    <circle cx="27" cy="153" r="7" fill="#050208"/>
+    <circle cx="24" cy="152" r="1.7" fill="#ff2a12"/><circle cx="30" cy="152" r="1.7" fill="#ff2a12"/>
+    <path d="M22 170 h10 M27 165 v10" stroke="#9e0f12" stroke-width="2"/>
+  </svg>
+</div>
+
+<div id="eyesBox" aria-hidden="true"></div>
 
 <div class="fog" aria-hidden="true"></div>
 <div class="ground" aria-hidden="true">
   <svg viewBox="0 0 1440 200" preserveAspectRatio="xMidYMax slice">
-    <path fill="#1c0f2e" d="M0 150 Q180 110 360 135 T720 125 T1080 140 T1440 118 V200 H0Z"/>
-    <g fill="#0b0614">
+    <path fill="#140610" d="M0 150 Q180 110 360 135 T720 125 T1080 140 T1440 118 V200 H0Z"/>
+    <g fill="#030104">
+      <!-- dead trees -->
       <path d="M1190 200 L1198 120 Q1170 95 1140 92 Q1172 88 1200 108 L1204 70 Q1180 50 1168 30 Q1192 46 1208 64 Q1214 40 1236 22 Q1222 50 1216 80 L1214 108 Q1246 84 1290 86 Q1250 96 1218 124 L1222 200Z"/>
+      <path d="M60 200 L66 130 Q44 112 20 110 Q46 106 68 118 L70 90 Q56 74 48 58 Q64 70 74 84 Q80 66 96 54 Q86 76 80 98 L78 124 Q100 108 128 110 Q102 116 80 138 L84 200Z"/>
+      <!-- gravestones -->
       <path d="M150 200 V150 Q150 124 176 124 Q202 124 202 150 V200Z"/>
-      <path d="M250 200 V160 Q250 142 268 142 Q286 142 286 160 V200Z"/>
-      <rect x="880" y="138" width="10" height="62"/><rect x="866" y="152" width="38" height="9"/>
-      <path d="M960 200 V156 Q960 136 982 136 Q1004 136 1004 156 V200Z"/>
+      <path d="M250 200 V160 Q250 142 268 142 Q286 142 286 160 V200Z" transform="rotate(-6 268 170)"/>
+      <rect x="880" y="132" width="10" height="68"/><rect x="866" y="148" width="38" height="9"/>
+      <path d="M960 200 V156 Q960 136 982 136 Q1004 136 1004 156 V200Z" transform="rotate(5 982 170)"/>
+      <rect x="1310" y="150" width="34" height="50" rx="4"/>
+      <!-- haunted house on the hill -->
+      <path d="M700 132 V96 L716 80 L732 96 V104 L752 104 V86 L760 70 L768 86 V104 L790 104 V132Z"/>
+      <!-- pumpkins -->
       <ellipse cx="420" cy="182" rx="26" ry="20"/><rect x="417" y="156" width="6" height="10"/>
       <ellipse cx="462" cy="188" rx="17" ry="13"/>
-      <rect x="560" y="150" width="6" height="50"/><rect x="590" y="146" width="6" height="54"/><rect x="620" y="150" width="6" height="50"/><rect x="650" y="146" width="6" height="54"/><rect x="552" y="166" width="112" height="5"/>
+      <!-- fence -->
+      <path d="M552 200 V150 l4 -8 l4 8 V200Z M582 200 V146 l4 -8 l4 8 V200Z M612 200 V150 l4 -8 l4 8 V200Z M642 200 V146 l4 -8 l4 8 V200Z"/>
+      <rect x="548" y="166" width="104" height="5"/>
       <path d="M0 175 Q300 160 600 178 T1440 170 V200 H0Z"/>
     </g>
-    <g fill="#ff8a2a" opacity=".9">
-      <path d="M408 176 l6 -7 l6 7z"/><path d="M422 176 l6 -7 l6 7z"/>
-      <path d="M406 186 q14 10 28 0 l-4 4 l-4 -3 l-4 3 l-4 -3 l-4 3 l-4 -3z"/>
+    <!-- lit windows & carved glow -->
+    <g fill="#ffb13b"><rect x="710" y="104" width="7" height="9" opacity=".85"/><rect x="772" y="112" width="7" height="9" opacity=".6"/></g>
+    <g fill="#ff6a1a">
+      <path d="M406 178 l6 -8 l6 8z"/><path d="M422 178 l6 -8 l6 8z"/>
+      <path d="M404 186 q16 12 32 0 l-4 5 l-4 -4 l-4 4 l-4 -4 l-4 4 l-4 -4 l-4 4z"/>
     </g>
   </svg>
 </div>
 <div class="fog two" aria-hidden="true"></div>
+<div class="vignette" aria-hidden="true"></div>
+<div id="flash" aria-hidden="true"></div>
+
+<button id="muteBtn" aria-label="Mute music" title="Mute music">
+  <svg id="icoOn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a10 10 0 0 1 0 14"/></svg>
+  <svg id="icoOff" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="m23 9-6 6"/><path d="m17 9 6 6"/></svg>
+</button>
 
 <main class="stage">
   <p class="from">A Halloween message from <b id="names"></b></p>
@@ -236,16 +327,15 @@ button:focus-visible{outline:2px solid var(--candle);outline-offset:3px}
         <div class="fallback" id="fallback"><div class="big">🎃</div><div class="txt">Little pumpkin coming soon</div></div>
       </div>
       <canvas id="scratch" aria-label="Scratch card. Drag across it to reveal the surprise."></canvas>
-      <div class="sheen" id="sheen"></div>
       <svg class="hint" id="hint" viewBox="0 0 48 48" aria-hidden="true">
-        <circle cx="24" cy="24" r="20" fill="rgba(255,240,210,.35)"/>
-        <circle cx="24" cy="24" r="11" fill="#fff6e6"/>
+        <circle cx="24" cy="24" r="20" fill="rgba(255,220,190,.3)"/>
+        <circle cx="24" cy="24" r="11" fill="#fff0e0"/>
       </svg>
     </div>
   </div>
 
   <div class="meter" id="meter">
-    <span>Scratch the pumpkin</span>
+    <span>Scratch if you dare</span>
     <div class="track"><span id="bar"></span></div>
     <output id="pct">0%</output>
   </div>
@@ -255,7 +345,7 @@ button:focus-visible{outline:2px solid var(--candle);outline-offset:3px}
     <p id="revealMessage"></p>
     <div class="actions">
       <button class="primary" id="shareBtn">Share the news</button>
-      <button class="ghost" id="againBtn">Scratch again</button>
+      <button class="ghostBtn" id="againBtn">Scratch again</button>
     </div>
   </section>
 </main>
@@ -269,13 +359,14 @@ button:focus-visible{outline:2px solid var(--candle);outline-offset:3px}
    ========================================================= */
 const CONFIG = {
   names:         "Parth & family",
-  headline:      "Trick or treat? We have a treat for you",
+  headline:      "Something is coming…",
   revealTitle:   "A little pumpkin is on the way!",
   revealMessage: "We're having a baby, arriving spring 2027. Happy Halloween from the soon-to-be three of us.",
   // Upload your photo to the same GitHub repo and put its file name here, e.g. "photo1.jpg"
   // For now this shows a random placeholder photo:
   image:         "https://picsum.photos/seed/littlepumpkin/1000/1000",
-  revealAt:      0.55   // reveal automatically after 55% is scratched
+  revealAt:      0.55,  // reveal automatically after 55% is scratched
+  lightning:     true   // set to false to turn off lightning flashes
 };
 /* ========================================================= */
 
@@ -285,6 +376,7 @@ $("headline").textContent = CONFIG.headline;
 $("revealTitle").textContent = CONFIG.revealTitle;
 $("revealMessage").textContent = CONFIG.revealMessage;
 const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const rand = (a,b) => a + Math.random()*(b-a);
 
 /* ---------- Reveal image ---------- */
 const img = $("revealImg");
@@ -292,21 +384,225 @@ img.onload = () => img.classList.add("ready");
 img.onerror = () => { img.style.display = "none"; $("fallback").classList.add("show"); };
 img.src = CONFIG.image;
 
+/* =========================================================
+   🎵 SOUND — all generated live, no music files needed
+   ========================================================= */
+const Sound = {
+  ctx:null, master:null, scary:null, sweet:null, send:null,
+  muted:false, melodyOn:false, lullabyToken:0, noise:null,
+
+  init(){
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if(!AC) return;
+    const c = this.ctx = new AC();
+    this.master = c.createGain(); this.master.gain.value = .9; this.master.connect(c.destination);
+
+    // echo / reverb-ish send
+    const delay = c.createDelay(2); delay.delayTime.value = .42;
+    const fb = c.createGain(); fb.gain.value = .4;
+    const tone = c.createBiquadFilter(); tone.type = "lowpass"; tone.frequency.value = 2400;
+    delay.connect(tone); tone.connect(fb); fb.connect(delay); tone.connect(this.master);
+    this.send = c.createGain(); this.send.gain.value = .6; this.send.connect(delay);
+
+    this.scary = c.createGain(); this.scary.gain.value = 0; this.scary.connect(this.master);
+    this.sweet = c.createGain(); this.sweet.gain.value = 0; this.sweet.connect(this.master);
+
+    // noise buffer
+    const len = c.sampleRate*2, buf = c.createBuffer(1,len,c.sampleRate), d = buf.getChannelData(0);
+    for(let i=0;i<len;i++) d[i] = Math.random()*2-1;
+    this.noise = buf;
+
+    this.drone(); this.wind(); this.startScary();
+  },
+
+  startScary(){
+    const c = this.ctx, t = c.currentTime;
+    this.scary.gain.cancelScheduledValues(t);
+    this.scary.gain.setValueAtTime(this.scary.gain.value, t);
+    this.scary.gain.linearRampToValueAtTime(1, t+3);
+    this.sweet.gain.cancelScheduledValues(t);
+    this.sweet.gain.setValueAtTime(this.sweet.gain.value, t);
+    this.sweet.gain.linearRampToValueAtTime(0, t+1);
+    this.lullabyToken++;
+    if(!this.melodyOn){ this.melodyOn = true; this.melody(); }
+  },
+
+  drone(){
+    const c = this.ctx;
+    const f = c.createBiquadFilter(); f.type = "lowpass"; f.frequency.value = 300; f.Q.value = 7;
+    const g = c.createGain(); g.gain.value = .14;
+    [[36.71,.3],[73.42,.25],[73.9,.22],[77.78,.1]].forEach(([fr,v]) => {
+      const o = c.createOscillator(); o.type = "sawtooth"; o.frequency.value = fr;
+      const og = c.createGain(); og.gain.value = v; o.connect(og); og.connect(f); o.start();
+    });
+    const lfo = c.createOscillator(); lfo.frequency.value = .06;
+    const lg = c.createGain(); lg.gain.value = 170; lfo.connect(lg); lg.connect(f.frequency); lfo.start();
+    f.connect(g); g.connect(this.scary);
+  },
+
+  wind(){
+    const c = this.ctx, src = c.createBufferSource(); src.buffer = this.noise; src.loop = true;
+    const f = c.createBiquadFilter(); f.type = "bandpass"; f.frequency.value = 550; f.Q.value = 1.4;
+    const g = c.createGain(); g.gain.value = .07;
+    const lfo = c.createOscillator(); lfo.frequency.value = .09;
+    const lg = c.createGain(); lg.gain.value = 380; lfo.connect(lg); lg.connect(f.frequency);
+    const lfo2 = c.createOscillator(); lfo2.frequency.value = .05;
+    const lg2 = c.createGain(); lg2.gain.value = .04; lfo2.connect(lg2); lg2.connect(g.gain);
+    src.connect(f); f.connect(g); g.connect(this.scary);
+    src.start(); lfo.start(); lfo2.start();
+  },
+
+  // eerie theremin-like notes + low bells
+  melody(){
+    if(!this.melodyOn || !this.ctx) return;
+    const c = this.ctx, t = c.currentTime + .05;
+    const notes = [293.66,349.23,415.30,440,523.25,587.33,369.99,311.13];
+    const fr = notes[Math.floor(Math.random()*notes.length)];
+    if(Math.random() < .75){
+      const o = c.createOscillator(); o.type = "sine"; o.frequency.value = fr;
+      const vib = c.createOscillator(); vib.frequency.value = 5.2;
+      const vg = c.createGain(); vg.gain.value = fr*.014; vib.connect(vg); vg.connect(o.frequency);
+      // slow glide for a ghostly bend
+      o.frequency.setValueAtTime(fr*.97, t); o.frequency.linearRampToValueAtTime(fr, t+.6);
+      const g = c.createGain(); g.gain.setValueAtTime(0,t);
+      g.gain.linearRampToValueAtTime(.06, t+.9); g.gain.linearRampToValueAtTime(.045, t+1.8); g.gain.linearRampToValueAtTime(0, t+3.4);
+      o.connect(g); g.connect(this.scary); g.connect(this.send);
+      o.start(t); vib.start(t); o.stop(t+3.6); vib.stop(t+3.6);
+    } else {
+      // tolling bell
+      [1,2.76,5.4].forEach((m,i) => {
+        const o = c.createOscillator(); o.type = "sine"; o.frequency.value = fr/2*m;
+        const g = c.createGain(); g.gain.setValueAtTime(0,t);
+        g.gain.linearRampToValueAtTime(.12/(i+1), t+.01); g.gain.exponentialRampToValueAtTime(.0001, t+4.5);
+        o.connect(g); g.connect(this.scary); g.connect(this.send); o.start(t); o.stop(t+4.6);
+      });
+    }
+    setTimeout(() => this.melody(), rand(1700,3800));
+  },
+
+  thunder(delaySec){
+    if(!this.ctx) return;
+    const c = this.ctx, t = c.currentTime + delaySec;
+    const src = c.createBufferSource(); src.buffer = this.noise; src.loop = true;
+    const f = c.createBiquadFilter(); f.type = "lowpass";
+    f.frequency.setValueAtTime(1200, t); f.frequency.exponentialRampToValueAtTime(90, t+3.5);
+    const g = c.createGain(); g.gain.setValueAtTime(0,t);
+    g.gain.linearRampToValueAtTime(.7, t+.05); g.gain.exponentialRampToValueAtTime(.25, t+.8);
+    g.gain.linearRampToValueAtTime(.35, t+1.2); g.gain.exponentialRampToValueAtTime(.0001, t+4.5);
+    src.connect(f); f.connect(g); g.connect(this.scary);
+    src.start(t); src.stop(t+4.6);
+  },
+
+  heartbeat(strength){
+    if(!this.ctx) return;
+    const c = this.ctx, t = c.currentTime;
+    [[0,1],[.2,.65]].forEach(([dt,v]) => {
+      const o = c.createOscillator(); o.type = "sine";
+      o.frequency.setValueAtTime(75, t+dt); o.frequency.exponentialRampToValueAtTime(38, t+dt+.16);
+      const g = c.createGain(); g.gain.setValueAtTime(0,t+dt);
+      g.gain.linearRampToValueAtTime(.55*v*strength, t+dt+.012); g.gain.exponentialRampToValueAtTime(.0001, t+dt+.22);
+      o.connect(g); g.connect(this.scary); o.start(t+dt); o.stop(t+dt+.25);
+    });
+  },
+
+  // Scary → sweet: a music-box lullaby for the big news
+  toSweet(){
+    if(!this.ctx) return;
+    const c = this.ctx, t = c.currentTime;
+    this.melodyOn = false;
+    this.scary.gain.cancelScheduledValues(t);
+    this.scary.gain.setValueAtTime(this.scary.gain.value, t);
+    this.scary.gain.linearRampToValueAtTime(0, t+2.5);
+    this.sweet.gain.cancelScheduledValues(t);
+    this.sweet.gain.setValueAtTime(0, t);
+    this.sweet.gain.linearRampToValueAtTime(1, t+.8);
+    const token = ++this.lullabyToken;
+    setTimeout(() => this.lullaby(token), 900);
+  },
+
+  lullaby(token){
+    if(token !== this.lullabyToken || !this.ctx) return;
+    const c = this.ctx;
+    const N = {C:523.25,D:587.33,E:659.25,F:698.46,G:783.99,A:880};
+    // Traditional "Twinkle Twinkle" (public domain) as a music box
+    const song = "C C G G A A G- F F E E D D C- G G F F E E D- G G F F E E D- C C G G A A G- F F E E D D C-".split(" ");
+    let t = c.currentTime + .1;
+    const beat = .42;
+    for(const n of song){
+      const key = n[0], long = n.endsWith("-"), f = N[key];
+      [[1,.16],[2,.05],[3.01,.025]].forEach(([m,v]) => {
+        const o = c.createOscillator(); o.type = "sine"; o.frequency.value = f*m;
+        const g = c.createGain(); g.gain.setValueAtTime(0,t);
+        g.gain.linearRampToValueAtTime(v, t+.006); g.gain.exponentialRampToValueAtTime(.0001, t+1.4);
+        o.connect(g); g.connect(this.sweet); g.connect(this.send); o.start(t); o.stop(t+1.5);
+      });
+      t += long ? beat*2 : beat;
+    }
+    const total = (t - c.currentTime)*1000;
+    setTimeout(() => this.lullaby(token), total + 2500);
+  },
+
+  toggle(){
+    if(!this.ctx) return;
+    this.muted = !this.muted;
+    const t = this.ctx.currentTime;
+    this.master.gain.cancelScheduledValues(t);
+    this.master.gain.setValueAtTime(this.master.gain.value, t);
+    this.master.gain.linearRampToValueAtTime(this.muted ? 0 : .9, t+.3);
+    $("icoOn").style.display = this.muted ? "none" : "";
+    $("icoOff").style.display = this.muted ? "" : "none";
+    $("muteBtn").setAttribute("aria-label", this.muted ? "Play music" : "Mute music");
+    $("muteBtn").title = this.muted ? "Play music" : "Mute music";
+  }
+};
+document.addEventListener("visibilitychange", () => {
+  if(!Sound.ctx) return;
+  document.hidden ? Sound.ctx.suspend() : Sound.ctx.resume();
+});
+$("muteBtn").onclick = () => Sound.toggle();
+
+/* ---------- Gate ---------- */
+$("enterBtn").onclick = () => {
+  try{ Sound.init(); if(Sound.ctx && Sound.ctx.state === "suspended") Sound.ctx.resume(); }catch(e){ console.warn(e); }
+  $("gate").classList.add("gone");
+  document.body.classList.remove("locked");
+  $("muteBtn").classList.add("show");
+  setTimeout(() => lightning(true), 700);
+  scheduleEyes();
+};
+
 /* ---------- Bats ---------- */
 const BAT_D = "M0 9 C6 1 13 2 15 8 C16 5 18 4 20 7 C22 4 24 5 25 8 C27 2 34 1 40 9 C34 7 30 10 29 15 C26 12 23 12 20 17 C17 12 14 12 11 15 C10 10 6 7 0 9Z";
 if(!reduceMotion){
   const box = $("bats");
-  for(let i=0;i<5;i++){
+  for(let i=0;i<8;i++){
     const b = document.createElement("div");
     b.className = "bat";
     b.innerHTML = `<svg viewBox="0 0 40 20"><path d="${BAT_D}"/></svg>`;
-    b.style.width = (26 + Math.random()*26) + "px";
-    b.style.top = (6 + Math.random()*38) + "vh";
-    b.style.animationDuration = (11 + Math.random()*9) + "s";
-    b.style.animationDelay = (-Math.random()*16) + "s";
-    b.firstChild.style.animationDuration = (.2 + Math.random()*.15) + "s";
+    b.style.width = rand(24,56) + "px";
+    b.style.top = rand(5,45) + "vh";
+    b.style.animationDuration = rand(9,19) + "s";
+    b.style.animationDelay = -rand(0,16) + "s";
+    b.firstChild.style.animationDuration = rand(.18,.32) + "s";
     box.appendChild(b);
   }
+}
+
+/* ---------- Glowing eyes in the dark ---------- */
+const eyeSpots = [[6,70],[88,64],[14,82],[80,80],[48,86],[92,40],[3,50]];
+const eyes = eyeSpots.map(([x,y]) => {
+  const e = document.createElement("div");
+  e.className = "eyes"; e.innerHTML = "<i></i><i></i>";
+  e.style.left = x + "vw"; e.style.top = y + "vh";
+  e.style.transform = `scale(${rand(.7,1.3)})`;
+  $("eyesBox").appendChild(e); return e;
+});
+function scheduleEyes(){
+  if(document.body.classList.contains("sweet")) return;
+  const e = eyes[Math.floor(Math.random()*eyes.length)];
+  e.classList.add("on");
+  setTimeout(() => e.classList.remove("on"), rand(2500,5000));
+  setTimeout(scheduleEyes, rand(1800,4200));
 }
 
 /* ---------- Starry sky ---------- */
@@ -315,24 +611,60 @@ let stars = [];
 function sizeSky(){
   const d = Math.min(devicePixelRatio || 1, 2);
   sky.width = innerWidth*d; sky.height = innerHeight*d; sctx.setTransform(d,0,0,d,0,0);
-  const n = Math.round(innerWidth*innerHeight/6500);
-  stars = Array.from({length:n}, () => ({
-    x:Math.random()*innerWidth, y:Math.random()*innerHeight*.8,
-    r:Math.random()*1.2+.2, p:Math.random()*Math.PI*2, s:Math.random()*.02+.005
-  }));
+  const n = Math.round(innerWidth*innerHeight/8000);
+  stars = Array.from({length:n}, () => ({x:rand(0,innerWidth), y:rand(0,innerHeight*.75), r:rand(.2,1.2), p:rand(0,6.28), s:rand(.005,.025)}));
 }
 function drawSky(){
   sctx.clearRect(0,0,innerWidth,innerHeight);
-  sctx.fillStyle = "#fff1d8";
+  sctx.fillStyle = "#ffe8e0";
   for(const st of stars){
-    st.p += st.s;
-    sctx.globalAlpha = .45 + Math.sin(st.p)*.35;
+    st.p += st.s; sctx.globalAlpha = .35 + Math.sin(st.p)*.3;
     sctx.beginPath(); sctx.arc(st.x,st.y,st.r,0,Math.PI*2); sctx.fill();
   }
   sctx.globalAlpha = 1;
   if(!reduceMotion) requestAnimationFrame(drawSky);
 }
 sizeSky(); drawSky();
+
+/* ---------- Lightning ---------- */
+const boltC = $("bolt"), bctx = boltC.getContext("2d");
+function sizeBolt(){ const d = Math.min(devicePixelRatio||1,2); boltC.width = innerWidth*d; boltC.height = innerHeight*d; bctx.setTransform(d,0,0,d,0,0); }
+function drawBolt(x, y, len, width){
+  bctx.beginPath(); bctx.moveTo(x,y);
+  let cx = x, cy = y;
+  const pts = [];
+  while(cy < y + len){
+    cx += rand(-38,38); cy += rand(18,42);
+    bctx.lineTo(cx,cy); pts.push([cx,cy]);
+  }
+  bctx.lineWidth = width; bctx.stroke();
+  return pts;
+}
+let lightningTimer;
+function lightning(first){
+  clearTimeout(lightningTimer);
+  if(!CONFIG.lightning || reduceMotion || document.body.classList.contains("sweet")) return;
+  const fl = $("flash");
+  fl.style.transition = "none"; fl.style.opacity = ".55";
+  setTimeout(() => { fl.style.transition = "opacity .12s"; fl.style.opacity = "0"; }, 70);
+  setTimeout(() => { fl.style.transition = "none"; fl.style.opacity = ".3"; }, 260);
+  setTimeout(() => { fl.style.transition = "opacity .9s"; fl.style.opacity = "0"; }, 330);
+
+  bctx.clearRect(0,0,innerWidth,innerHeight);
+  bctx.strokeStyle = "rgba(235,240,255,.95)"; bctx.shadowColor = "#b8c8ff"; bctx.shadowBlur = 18;
+  bctx.lineJoin = "miter";
+  const x = rand(innerWidth*.15, innerWidth*.85);
+  const pts = drawBolt(x, 0, innerHeight*rand(.35,.6), 3);
+  bctx.globalAlpha = .6;
+  for(let i=0;i<2;i++){ const p = pts[Math.floor(rand(1,pts.length-1))]; if(p) drawBolt(p[0],p[1],rand(60,160),1.5); }
+  bctx.globalAlpha = 1;
+  setTimeout(() => bctx.clearRect(0,0,innerWidth,innerHeight), 180);
+  setTimeout(() => { bctx.globalAlpha=.7; drawBolt(x, 0, innerHeight*.4, 2); bctx.globalAlpha=1; }, 260);
+  setTimeout(() => bctx.clearRect(0,0,innerWidth,innerHeight), 360);
+
+  Sound.thunder(first ? .3 : rand(.4,1.2));
+  lightningTimer = setTimeout(() => lightning(false), rand(9000,18000));
+}
 
 /* ---------- Shapes ---------- */
 function starPath(c,x,y,r){
@@ -342,34 +674,34 @@ function starPath(c,x,y,r){
 }
 const batPath = new Path2D(BAT_D);
 
-/* ---------- Pumpkin scratch surface ---------- */
+/* ---------- Scary pumpkin scratch surface ---------- */
 const canvas = $("scratch"), ctx = canvas.getContext("2d", { willReadFrequently:true });
-let dpr = 1, drawing = false, last = null, revealed = false, moves = 0, started = false;
+let dpr = 1, drawing = false, last = null, revealed = false, moves = 0, started = false, lastP = 0, lastBeat = 0;
 
-function tri(x,y,size){
-  ctx.beginPath(); ctx.moveTo(x, y-size*.55); ctx.lineTo(x-size*.6, y+size*.45); ctx.lineTo(x+size*.6, y+size*.45); ctx.closePath(); ctx.fill();
+function poly(points, ox, oy, s){
+  ctx.beginPath();
+  points.forEach(([x,y],i) => i ? ctx.lineTo(ox+x*s, oy+y*s) : ctx.moveTo(ox+x*s, oy+y*s));
+  ctx.closePath();
 }
 function web(ox,oy,r,dir){
-  ctx.save(); ctx.strokeStyle = "rgba(255,245,225,.42)"; ctx.lineWidth = 1*dpr;
+  ctx.save(); ctx.strokeStyle = "rgba(255,245,235,.4)"; ctx.lineWidth = 1*dpr;
   const spokes = 6, a0 = dir>0 ? 0 : Math.PI, a1 = a0 + Math.PI/2;
-  for(let i=0;i<=spokes;i++){
-    const a = a0 + (a1-a0)*i/spokes;
-    ctx.beginPath(); ctx.moveTo(ox,oy); ctx.lineTo(ox+Math.cos(a)*r, oy+Math.sin(a)*r); ctx.stroke();
-  }
+  for(let i=0;i<=spokes;i++){ const a = a0+(a1-a0)*i/spokes; ctx.beginPath(); ctx.moveTo(ox,oy); ctx.lineTo(ox+Math.cos(a)*r, oy+Math.sin(a)*r); ctx.stroke(); }
   for(let k=1;k<=5;k++){
-    const rr = r*k/5.3;
-    ctx.beginPath();
+    const rr = r*k/5.3; ctx.beginPath();
     for(let i=0;i<=spokes;i++){
-      const a = a0 + (a1-a0)*i/spokes, px = ox+Math.cos(a)*rr, py = oy+Math.sin(a)*rr;
+      const a = a0+(a1-a0)*i/spokes, px = ox+Math.cos(a)*rr, py = oy+Math.sin(a)*rr;
       if(i===0) ctx.moveTo(px,py);
-      else {
-        const am = a0 + (a1-a0)*(i-.5)/spokes, sag = rr*.86;
-        ctx.quadraticCurveTo(ox+Math.cos(am)*sag, oy+Math.sin(am)*sag, px, py);
-      }
+      else { const am = a0+(a1-a0)*(i-.5)/spokes, sag = rr*.86; ctx.quadraticCurveTo(ox+Math.cos(am)*sag, oy+Math.sin(am)*sag, px, py); }
     }
     ctx.stroke();
   }
   ctx.restore();
+}
+function crack(x,y,steps,s){
+  ctx.beginPath(); ctx.moveTo(x,y);
+  for(let i=0;i<steps;i++){ x += rand(-14,14)*s; y += rand(8,20)*s; ctx.lineTo(x,y); }
+  ctx.stroke();
 }
 
 function paintFoil(){
@@ -377,74 +709,76 @@ function paintFoil(){
   dpr = Math.min(devicePixelRatio || 1, 2);
   canvas.width = Math.max(1, Math.round(rect.width*dpr)); canvas.height = Math.max(1, Math.round(rect.height*dpr));
   const w = canvas.width, h = canvas.height, cx = w/2, cy = h/2, s = w/390;
-  ctx.globalCompositeOperation = "source-over"; ctx.globalAlpha = 1;
+  ctx.globalCompositeOperation = "source-over"; ctx.globalAlpha = 1; ctx.shadowBlur = 0;
 
-  // pumpkin skin
-  const base = ctx.createRadialGradient(cx, cy*.8, w*.05, cx, cy, w*.75);
-  base.addColorStop(0,"#ffb04a"); base.addColorStop(.45,"#f5801d"); base.addColorStop(1,"#a8400a");
+  // dark rotting pumpkin skin
+  const base = ctx.createRadialGradient(cx, cy*.85, w*.05, cx, cy, w*.78);
+  base.addColorStop(0,"#ff8f2a"); base.addColorStop(.4,"#d4520f"); base.addColorStop(.8,"#6e1c06"); base.addColorStop(1,"#2e0a04");
   ctx.fillStyle = base; ctx.fillRect(0,0,w,h);
 
-  // ribs
   const ribs = 7, rw = w/ribs;
   for(let i=0;i<ribs;i++){
     const x0 = i*rw, g = ctx.createLinearGradient(x0,0,x0+rw,0);
-    g.addColorStop(0,"rgba(110,35,0,.38)"); g.addColorStop(.5,"rgba(255,210,140,.16)"); g.addColorStop(1,"rgba(110,35,0,.38)");
+    g.addColorStop(0,"rgba(60,15,0,.5)"); g.addColorStop(.5,"rgba(255,190,110,.1)"); g.addColorStop(1,"rgba(60,15,0,.5)");
     ctx.fillStyle = g; ctx.fillRect(x0,0,rw+1,h);
   }
-  ctx.strokeStyle = "rgba(90,28,0,.25)"; ctx.lineWidth = 2*dpr;
-  for(let i=1;i<ribs;i++){
-    const x = i*rw, bend = (x-cx)*.12;
-    ctx.beginPath(); ctx.moveTo(x-bend,0); ctx.quadraticCurveTo(x+bend,cy,x-bend,h); ctx.stroke();
-  }
+  ctx.strokeStyle = "rgba(40,10,0,.35)"; ctx.lineWidth = 2*dpr;
+  for(let i=1;i<ribs;i++){ const x = i*rw, bend = (x-cx)*.12; ctx.beginPath(); ctx.moveTo(x-bend,0); ctx.quadraticCurveTo(x+bend,cy,x-bend,h); ctx.stroke(); }
 
-  // grain
+  // grain + rot spots
   const grains = (w*h)/70;
   for(let i=0;i<grains;i++){
-    ctx.fillStyle = Math.random()>.5 ? "rgba(255,230,180,.22)" : "rgba(80,20,0,.12)";
+    ctx.fillStyle = Math.random()>.55 ? "rgba(255,210,160,.16)" : "rgba(30,5,0,.16)";
     ctx.fillRect(Math.random()*w, Math.random()*h, dpr, dpr);
   }
+  for(let i=0;i<7;i++){
+    const x = rand(0,w), y = rand(0,h), r = rand(10,34)*s;
+    const g = ctx.createRadialGradient(x,y,0,x,y,r);
+    g.addColorStop(0,"rgba(40,15,5,.45)"); g.addColorStop(1,"rgba(40,15,5,0)");
+    ctx.fillStyle = g; ctx.fillRect(x-r,y-r,r*2,r*2);
+  }
+
+  // cracks
+  ctx.strokeStyle = "rgba(20,4,0,.55)"; ctx.lineWidth = 1.6*dpr;
+  crack(w*.12,0,7,s); crack(w*.88,0,5,s); crack(w*.62,h*.72,5,s);
 
   // vignette
-  const vig = ctx.createRadialGradient(cx,cy,w*.3,cx,cy,w*.75);
-  vig.addColorStop(0,"rgba(0,0,0,0)"); vig.addColorStop(1,"rgba(40,10,0,.45)");
+  const vig = ctx.createRadialGradient(cx,cy,w*.25,cx,cy,w*.72);
+  vig.addColorStop(0,"rgba(0,0,0,0)"); vig.addColorStop(1,"rgba(10,0,0,.6)");
   ctx.fillStyle = vig; ctx.fillRect(0,0,w,h);
 
-  // spider webs
   web(0,0,w*.42,1); web(w,h,w*.34,-1);
 
-  // carved jack-o'-lantern eyes & nose, glowing
-  const fy = cy - 58*s;
+  // carved face, lit from inside by a candle
+  const ey = cy - 88*s, my = cy + 64*s;
+  const glow = ctx.createRadialGradient(cx, cy-10*s, 5*s, cx, cy, 200*s);
+  glow.addColorStop(0,"#fff6b0"); glow.addColorStop(.35,"#ffc233"); glow.addColorStop(.75,"#ff6a00"); glow.addColorStop(1,"#c42a00");
   ctx.save();
-  ctx.shadowColor = "rgba(255,210,90,.95)"; ctx.shadowBlur = 18*s;
-  ctx.fillStyle = "#3a1304";
-  tri(cx-44*s, fy, 30*s); tri(cx+44*s, fy, 30*s);
-  ctx.beginPath(); ctx.moveTo(cx,fy+18*s); ctx.lineTo(cx-8*s,fy+30*s); ctx.lineTo(cx+8*s,fy+30*s); ctx.closePath(); ctx.fill();
+  ctx.shadowColor = "rgba(255,170,30,1)"; ctx.shadowBlur = 26*s;
+  ctx.fillStyle = glow;
+  poly([[-82,-14],[-20,8],[-58,30]], cx, ey, s); ctx.fill();          // left eye (angry)
+  poly([[82,-14],[20,8],[58,30]], cx, ey, s); ctx.fill();             // right eye
+  poly([[0,22],[-11,44],[11,44]], cx, ey, s); ctx.fill();             // nose
+  poly([                                                              // jagged grin
+    [-112,-18],[-72,-2],[-58,-2],[-50,18],[-40,0],[6,4],[15,24],[24,4],[62,-2],[112,-18],
+    [92,6],[64,24],[56,8],[46,30],[4,40],[-18,38],[-27,18],[-36,36],[-78,20]
+  ], cx, my, s); ctx.fill();
   ctx.restore();
-  ctx.fillStyle = "rgba(255,190,70,.55)";
-  tri(cx-44*s, fy+5*s, 14*s); tri(cx+44*s, fy+5*s, 14*s);
 
   // label
   ctx.textAlign = "center"; ctx.textBaseline = "middle";
-  ctx.font = `italic ${38*s}px "IM Fell English", Georgia, serif`;
-  ctx.fillStyle = "rgba(255,220,160,.55)"; ctx.fillText("Scratch if you dare", cx, cy+28*s+1.5*dpr);
-  ctx.fillStyle = "#3a1304"; ctx.fillText("Scratch if you dare", cx, cy+28*s);
-  ctx.font = `600 ${13*s}px Figtree, system-ui, sans-serif`;
-  ctx.fillStyle = "rgba(58,19,4,.75)";
-  ctx.fillText("a little treat is hiding underneath", cx, cy+62*s);
+  ctx.font = `${40*s}px Creepster, "IM Fell English", Georgia, serif`;
+  ctx.fillStyle = "rgba(255,200,140,.4)"; ctx.fillText("Scratch if you dare", cx, cy+2*s+1.5*dpr);
+  ctx.fillStyle = "#1e0602"; ctx.fillText("Scratch if you dare", cx, cy+2*s);
+  ctx.font = `600 ${12.5*s}px Figtree, system-ui, sans-serif`;
+  ctx.fillStyle = "rgba(255,210,170,.7)";
+  ctx.fillText("something is hiding underneath…", cx, cy+128*s);
 
-  // tiny bats
-  ctx.fillStyle = "rgba(40,12,2,.55)";
-  [[.78,.14,.9],[.86,.24,.6],[.16,.82,.7]].forEach(([x,y,k]) => {
+  // bats
+  ctx.fillStyle = "rgba(10,2,0,.6)";
+  [[.8,.12,.9],[.88,.22,.6],[.14,.88,.7]].forEach(([x,y,k]) => {
     ctx.save(); ctx.translate(w*x, h*y); ctx.scale(k*s*1.1, k*s*1.1); ctx.translate(-20,-9); ctx.fill(batPath); ctx.restore();
   });
-
-  // stitched border
-  ctx.setLineDash([3*dpr,7*dpr]); ctx.lineCap = "round";
-  ctx.strokeStyle = "rgba(60,18,2,.4)"; ctx.lineWidth = 1.6*dpr;
-  const m = 15*dpr;
-  ctx.beginPath();
-  if(ctx.roundRect) ctx.roundRect(m,m,w-2*m,h-2*m,18*dpr); else ctx.rect(m,m,w-2*m,h-2*m);
-  ctx.stroke(); ctx.setLineDash([]);
 }
 
 function pos(e){
@@ -456,16 +790,20 @@ function scratch(a,b){
   ctx.lineWidth = 46*dpr; ctx.lineCap = "round"; ctx.lineJoin = "round";
   ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
   if(!reduceMotion) for(let i=0;i<3;i++) ember(b.cx,b.cy);
+  // heartbeat speeds up as you get closer
+  const now = performance.now(), gap = 1150 - lastP*750;
+  if(now - lastBeat > gap){ lastBeat = now; Sound.heartbeat(.6 + lastP*.8); }
 }
 function progress(){
   const data = ctx.getImageData(0,0,canvas.width,canvas.height).data;
   let clear = 0, total = 0;
   for(let i=3;i<data.length;i+=4*24){ total++; if(data[i] < 40) clear++; }
-  const p = clear/total, shown = Math.min(100, Math.round(p/CONFIG.revealAt*100));
+  const p = clear/total; lastP = Math.min(1, p/CONFIG.revealAt);
+  const shown = Math.round(lastP*100);
   $("bar").style.width = shown+"%"; $("pct").textContent = shown+"%";
   if(p >= CONFIG.revealAt) reveal();
 }
-function begin(){ if(started) return; started = true; $("hint").classList.add("off"); $("sheen").classList.add("off"); }
+function begin(){ if(started) return; started = true; $("hint").classList.add("off"); }
 
 canvas.addEventListener("pointerdown", e => {
   if(revealed) return;
@@ -485,19 +823,19 @@ canvas.addEventListener("pointermove", e => {
 const fx = $("fx"), fctx = fx.getContext("2d");
 let parts = [], running = false;
 function sizeFx(){ const d = Math.min(devicePixelRatio||1,2); fx.width = innerWidth*d; fx.height = innerHeight*d; fctx.setTransform(d,0,0,d,0,0); }
-const COLORS = ["#ff7a1a","#ffb547","#f6ecd8","#9bd36a","#8f5bd6","#ff5a1f"];
+const COLORS = ["#ff5a1f","#ffb13b","#f3e7d3","#9bd36a","#8f5bd6","#ff2a12"];
 function ember(x,y){
-  parts.push({x,y,vx:(Math.random()-.5)*1.8,vy:-Math.random()*1.6-.3,g:.03,r:Math.random()*2.2+.8,
-    life:1,decay:.02+Math.random()*.02,shape:"ember",c:Math.random()>.4?"#ffb547":"#ff7a1a",rot:0,vr:0});
+  parts.push({x,y,vx:rand(-.9,.9),vy:-rand(.3,1.9),g:.03,r:rand(.8,3),life:1,decay:rand(.02,.04),
+    shape:"ember",c:Math.random()>.4?"#ffb13b":"#ff3a12",rot:0,vr:0});
   loop();
 }
 function burst(x,y,n,spread,power,dir=0){
   const shapes = ["candy","pumpkin","bat","star","rect"];
   for(let i=0;i<n;i++){
     const a = -Math.PI/2 + dir + (Math.random()-.5)*spread, v = power*(.5+Math.random());
-    parts.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,g:.18,r:Math.random()*6+6,
-      life:1,decay:.0035+Math.random()*.004,shape:shapes[Math.floor(Math.random()*shapes.length)],
-      c:COLORS[Math.floor(Math.random()*COLORS.length)],rot:Math.random()*6,vr:(Math.random()-.5)*.22,wob:Math.random()*10});
+    parts.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,g:.18,r:rand(6,12),life:1,decay:rand(.0035,.0075),
+      shape:shapes[Math.floor(Math.random()*shapes.length)],c:COLORS[Math.floor(Math.random()*COLORS.length)],
+      rot:rand(0,6),vr:rand(-.11,.11),wob:rand(0,10)});
   }
   loop();
 }
@@ -544,9 +882,13 @@ function loop(){
 /* ---------- Reveal ---------- */
 function reveal(){
   if(revealed) return; revealed = true; drawing = false;
+  document.body.classList.add("sweet");
+  clearTimeout(lightningTimer);
+  eyes.forEach(e => e.classList.remove("on"));
   canvas.classList.add("gone");
   $("bar").style.width = "100%"; $("pct").textContent = "100%";
   $("meter").classList.add("done"); $("after").classList.add("show");
+  Sound.toSweet();
   if(navigator.vibrate) navigator.vibrate([40,60,40]);
   if(reduceMotion) return;
   const r = $("card").getBoundingClientRect();
@@ -556,15 +898,19 @@ function reveal(){
 }
 
 $("againBtn").onclick = () => {
-  revealed = false; started = false; moves = 0;
+  revealed = false; started = false; moves = 0; lastP = 0;
+  document.body.classList.remove("sweet");
   canvas.classList.remove("gone"); $("after").classList.remove("show"); $("meter").classList.remove("done");
-  $("hint").classList.remove("off"); $("sheen").classList.remove("off");
+  $("hint").classList.remove("off");
   $("bar").style.width = "0"; $("pct").textContent = "0%";
   paintFoil(); $("card").scrollIntoView({behavior:"smooth",block:"center"});
+  if(Sound.ctx) Sound.startScary();
+  setTimeout(() => lightning(false), 1500);
+  scheduleEyes();
 };
 
 $("shareBtn").onclick = async () => {
-  const data = { title:CONFIG.headline, text:"Scratch the pumpkin to find out our news! 🎃", url:location.href };
+  const data = { title:CONFIG.headline, text:"Enter if you dare… then scratch the pumpkin 🎃", url:location.href };
   try{
     if(navigator.share){ await navigator.share(data); return; }
     await navigator.clipboard.writeText(location.href); toast("Link copied");
@@ -574,8 +920,8 @@ function toast(msg){ const t = $("toast"); t.textContent = msg; t.classList.add(
 
 /* ---------- Init ---------- */
 let rt;
-addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(() => { sizeSky(); sizeFx(); if(!revealed && !started) paintFoil(); }, 150); });
-sizeFx();
+addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(() => { sizeSky(); sizeFx(); sizeBolt(); if(!revealed && !started) paintFoil(); }, 150); });
+sizeFx(); sizeBolt();
 paintFoil();
 if(document.fonts) document.fonts.ready.then(() => { if(!started) paintFoil(); });
 </script>
