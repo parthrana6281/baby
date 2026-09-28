@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>We have a little secret…</title>
+
+<!-- Link preview when you send the URL (WhatsApp, iMessage, etc.) -->
+<meta name="description" content="Scratch the card to find out our news.">
+<meta property="og:title" content="We have a little secret…">
+<meta property="og:description" content="Scratch the card to find out our news.">
+<meta property="og:type" content="website">
+<!-- Optional: a teaser image (NOT the reveal photo). Must be a full URL, e.g.
+<meta property="og:image" content="https://YOURNAME.github.io/baby/teaser.jpg"> -->
+
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌙</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..600&family=Figtree:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+/* =====================================================
+   EDIT HERE → see the CONFIG block in the <script> below
+   ===================================================== */
+:root{
+  --night:#171a42;
+  --dusk:#2a2c6b;
+  --lilac:#c3b4f5;
+  --peach:#ffcbb8;
+  --milk:#fff8f0;
+  --mint:#bff0dc;
+  --muted:rgba(255,248,240,.68);
+  --serif:"Fraunces", Georgia, "Times New Roman", serif;
+  --sans:"Figtree", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html,body{height:100%}
+body{
+  font-family:var(--sans);
+  color:var(--milk);
+  background:
+    radial-gradient(120% 80% at 50% 0%, var(--dusk) 0%, var(--night) 55%, #0e1030 100%);
+  background-color:var(--night);
+  overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* Sky */
+#sky,#fx{position:fixed;inset:0;width:100%;height:100%;pointer-events:none}
+#sky{z-index:0}
+#fx{z-index:50}
+.moon{
+  position:fixed;top:clamp(24px,6vh,60px);right:clamp(18px,8vw,110px);
+  width:clamp(56px,9vw,96px);aspect-ratio:1;border-radius:50%;
+  box-shadow:inset -14px 6px 0 0 #fdf1d6;
+  filter:drop-shadow(0 0 22px rgba(253,241,214,.35));
+  z-index:1;transform:rotate(-18deg);
+}
+
+/* Layout */
+.stage{
+  position:relative;z-index:2;
+  min-height:100%;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:clamp(18px,3vh,28px);
+  padding:clamp(28px,6vh,64px) 20px;
+  text-align:center;
+}
+.from{
+  font-family:var(--serif);font-style:italic;font-weight:300;
+  font-size:clamp(1rem,2.6vw,1.2rem);color:var(--muted);letter-spacing:.01em;
+}
+.from b{font-weight:500;color:var(--milk);font-style:normal}
+h1{
+  font-family:var(--serif);font-weight:400;
+  font-variation-settings:"opsz" 144, "SOFT" 100, "WONK" 1;
+  font-size:clamp(2.3rem,8vw,4.4rem);line-height:1.02;letter-spacing:-.02em;
+  max-width:12ch;
+}
+
+/* Card */
+.card-wrap{position:relative;width:min(88vw,400px);}
+.card{
+  position:relative;width:100%;aspect-ratio:1/1;border-radius:28px;overflow:hidden;
+  background:#20224f;
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,.12),
+    0 30px 80px -20px rgba(4,5,30,.8),
+    0 0 90px -10px rgba(195,180,245,.35);
+  isolation:isolate;
+  user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;
+}
+.reveal{position:absolute;inset:0;}
+.reveal img{width:100%;height:100%;object-fit:cover;display:block;opacity:0;transition:opacity .6s}
+.reveal img.ready{opacity:1}
+.fallback{
+  position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:10px;
+  background:radial-gradient(circle at 50% 40%, #ffe3d6, #f7c6d9 45%, #c3b4f5 100%);
+  color:#3a2d5c;font-family:var(--serif);
+}
+.fallback.show{display:flex}
+.fallback .big{font-size:5rem;line-height:1}
+.fallback .txt{font-size:1.6rem;font-weight:500}
+
+#scratch{
+  position:absolute;inset:0;width:100%;height:100%;
+  touch-action:none;cursor:grab;z-index:3;
+  transition:opacity .9s ease, transform .9s ease;
+}
+#scratch:active{cursor:grabbing}
+#scratch.gone{opacity:0;transform:scale(1.06);pointer-events:none}
+
+.sheen{
+  position:absolute;inset:0;z-index:4;pointer-events:none;
+  background:linear-gradient(115deg, transparent 35%, rgba(255,255,255,.55) 48%, transparent 60%);
+  transform:translateX(-120%);
+  animation:sheen 3.6s ease-in-out 1.2s infinite;
+  mix-blend-mode:soft-light;
+}
+.sheen.off{display:none}
+@keyframes sheen{0%{transform:translateX(-120%)}55%,100%{transform:translateX(120%)}}
+
+.hint{
+  position:absolute;left:50%;bottom:18%;z-index:5;pointer-events:none;
+  width:46px;height:46px;margin-left:-23px;
+  animation:swipe 2.4s ease-in-out infinite;
+  transition:opacity .3s;
+}
+.hint.off{opacity:0}
+@keyframes swipe{
+  0%{transform:translate(-50px,0) rotate(-10deg);opacity:0}
+  15%{opacity:1}
+  50%{transform:translate(50px,-8px) rotate(8deg)}
+  85%{opacity:1}
+  100%{transform:translate(-50px,0) rotate(-10deg);opacity:0}
+}
+
+/* Progress */
+.meter{display:flex;align-items:center;gap:12px;width:min(88vw,400px);color:var(--muted);font-size:.9rem}
+.track{flex:1;height:4px;border-radius:4px;background:rgba(255,255,255,.12);overflow:hidden}
+.track span{display:block;height:100%;width:0;border-radius:4px;
+  background:linear-gradient(90deg,var(--lilac),var(--peach),var(--mint));transition:width .25s}
+.meter output{min-width:3.2ch;text-align:right;font-variant-numeric:tabular-nums}
+.meter.done{opacity:0;height:0;margin:-14px 0;transition:all .5s}
+
+/* After reveal */
+.after{
+  display:flex;flex-direction:column;align-items:center;gap:10px;
+  max-height:0;opacity:0;overflow:hidden;transform:translateY(12px);
+  transition:max-height .8s ease, opacity .8s ease .2s, transform .8s ease .2s;
+}
+.after.show{max-height:420px;opacity:1;transform:none}
+.after h2{
+  font-family:var(--serif);font-weight:500;font-variation-settings:"opsz" 144,"SOFT" 100;
+  font-size:clamp(2rem,7vw,3.2rem);line-height:1.05;letter-spacing:-.015em;
+  background:linear-gradient(90deg,var(--peach),var(--milk) 45%,var(--lilac));
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.after p{font-family:var(--serif);font-style:italic;font-size:clamp(1.05rem,3vw,1.3rem);color:var(--muted);max-width:32ch;line-height:1.5}
+.actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:14px}
+button{
+  font:600 .98rem var(--sans);border:0;border-radius:999px;padding:13px 22px;cursor:pointer;
+  transition:transform .15s, background .2s;
+}
+button:active{transform:scale(.97)}
+button:focus-visible{outline:2px solid var(--peach);outline-offset:3px}
+.primary{background:var(--milk);color:var(--night)}
+.primary:hover{background:#fff}
+.ghost{background:rgba(255,255,255,.08);color:var(--milk);box-shadow:inset 0 0 0 1px rgba(255,255,255,.2)}
+.ghost:hover{background:rgba(255,255,255,.14)}
+
+.toast{
+  position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));z-index:60;
+  transform:translate(-50%,20px);opacity:0;
+  background:var(--milk);color:var(--night);font-weight:600;font-size:.92rem;
+  padding:11px 18px;border-radius:999px;transition:all .3s;pointer-events:none;
+}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+
+@media (prefers-reduced-motion: reduce){
+  .sheen,.hint{animation:none}
+  .sheen{display:none}
+}
+</style>
+</head>
+<body>
+
+<canvas id="sky" aria-hidden="true"></canvas>
+<div class="moon" aria-hidden="true"></div>
+
+<main class="stage">
+  <p class="from">A little news from <b id="names"></b></p>
+  <h1 id="headline"></h1>
+
+  <div class="card-wrap">
+    <div class="card" id="card">
+      <div class="reveal">
+        <img id="revealImg" alt="Our announcement photo">
+        <div class="fallback" id="fallback"><div class="big">👶</div><div class="txt">Baby on board</div></div>
+      </div>
+      <canvas id="scratch" aria-label="Scratch card. Drag across it to reveal the surprise."></canvas>
+      <div class="sheen" id="sheen"></div>
+      <svg class="hint" id="hint" viewBox="0 0 48 48" aria-hidden="true">
+        <circle cx="24" cy="24" r="20" fill="rgba(255,255,255,.35)"/>
+        <circle cx="24" cy="24" r="11" fill="#fff"/>
+      </svg>
+    </div>
+  </div>
+
+  <div class="meter" id="meter">
+    <span>Scratch with your finger or mouse</span>
+    <div class="track"><span id="bar"></span></div>
+    <output id="pct">0%</output>
+  </div>
+
+  <section class="after" id="after" aria-live="polite">
+    <h2 id="revealTitle"></h2>
+    <p id="revealMessage"></p>
+    <div class="actions">
+      <button class="primary" id="shareBtn">Share the news</button>
+      <button class="ghost" id="againBtn">Scratch again</button>
+    </div>
+  </section>
+</main>
+
+<canvas id="fx" aria-hidden="true"></canvas>
+<div class="toast" id="toast">Link copied</div>
+
+<script>
+/* =========================================================
+   ✏️  CONFIG — change these, save, and push to GitHub
+   ========================================================= */
+const CONFIG = {
+  names:         "Alex & Sam",
+  headline:      "We have a secret to share",
+  revealTitle:   "We're having a baby!",
+  revealMessage: "Our little one arrives in spring 2027. We can't wait for you to meet them.",
+  // Put your photo in the same GitHub folder and write its file name, e.g. "reveal.jpg"
+  // For now this loads a random placeholder photo:
+  image:         "https://picsum.photos/seed/littleone/1000/1000",
+  revealAt:      0.55   // reveal automatically after 55% is scratched
+};
+/* ========================================================= */
+
+const $ = id => document.getElementById(id);
+$("names").textContent = CONFIG.names;
+$("headline").textContent = CONFIG.headline;
+$("revealTitle").textContent = CONFIG.revealTitle;
+$("revealMessage").textContent = CONFIG.revealMessage;
+
+const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/* ---------- Reveal image ---------- */
+const img = $("revealImg");
+img.onload = () => img.classList.add("ready");
+img.onerror = () => { img.style.display = "none"; $("fallback").classList.add("show"); };
+img.src = CONFIG.image;
+
+/* ---------- Starry sky ---------- */
+const sky = $("sky"), sctx = sky.getContext("2d");
+let stars = [];
+function sizeSky(){
+  const d = Math.min(devicePixelRatio || 1, 2);
+  sky.width = innerWidth * d; sky.height = innerHeight * d;
+  sctx.setTransform(d,0,0,d,0,0);
+  const n = Math.round(innerWidth * innerHeight / 5200);
+  stars = Array.from({length:n}, () => ({
+    x:Math.random()*innerWidth, y:Math.random()*innerHeight,
+    r:Math.random()*1.3+.2, p:Math.random()*Math.PI*2, s:Math.random()*.02+.005
+  }));
+}
+function drawSky(){
+  sctx.clearRect(0,0,innerWidth,innerHeight);
+  for(const st of stars){
+    st.p += reduceMotion ? 0 : st.s;
+    sctx.globalAlpha = .35 + Math.sin(st.p)*.35 + .2;
+    sctx.fillStyle = "#fff8f0";
+    sctx.beginPath(); sctx.arc(st.x, st.y, st.r, 0, Math.PI*2); sctx.fill();
+  }
+  sctx.globalAlpha = 1;
+  if(!reduceMotion) requestAnimationFrame(drawSky);
+}
+sizeSky(); drawSky();
+
+/* ---------- Scratch foil ---------- */
+const canvas = $("scratch"), ctx = canvas.getContext("2d", { willReadFrequently:true });
+let dpr = 1, drawing = false, last = null, revealed = false, moves = 0, started = false;
+
+function starPath(c, x, y, r){
+  c.beginPath();
+  for(let i=0;i<10;i++){
+    const a = Math.PI/5*i - Math.PI/2, rr = i%2 ? r*.45 : r;
+    c.lineTo(x + Math.cos(a)*rr, y + Math.sin(a)*rr);
+  }
+  c.closePath();
+}
+
+function paintFoil(){
+  const rect = canvas.getBoundingClientRect();
+  dpr = Math.min(devicePixelRatio || 1, 2);
+  canvas.width = rect.width * dpr; canvas.height = rect.height * dpr;
+  const w = canvas.width, h = canvas.height;
+  ctx.globalCompositeOperation = "source-over";
+
+  // silver base
+  const base = ctx.createLinearGradient(0,0,w,h);
+  base.addColorStop(0,"#d9dbe6"); base.addColorStop(.3,"#f5f5fa");
+  base.addColorStop(.55,"#b9bccd"); base.addColorStop(.8,"#eceef6"); base.addColorStop(1,"#a9adc2");
+  ctx.fillStyle = base; ctx.fillRect(0,0,w,h);
+
+  // holographic tint bands
+  ctx.globalCompositeOperation = "overlay";
+  const holo = ctx.createLinearGradient(0,h,w,0);
+  holo.addColorStop(0,"#c3b4f5"); holo.addColorStop(.25,"#bff0dc");
+  holo.addColorStop(.5,"#ffcbb8"); holo.addColorStop(.75,"#c3b4f5"); holo.addColorStop(1,"#bfe3ff");
+  ctx.globalAlpha = .9; ctx.fillStyle = holo; ctx.fillRect(0,0,w,h);
+  const glow = ctx.createRadialGradient(w*.3,h*.25,0,w*.3,h*.25,w*.7);
+  glow.addColorStop(0,"rgba(255,255,255,.9)"); glow.addColorStop(1,"rgba(255,255,255,0)");
+  ctx.fillStyle = glow; ctx.fillRect(0,0,w,h);
+  ctx.globalAlpha = 1;
+  ctx.globalCompositeOperation = "source-over";
+
+  // fine brushed lines
+  ctx.strokeStyle = "rgba(255,255,255,.18)"; ctx.lineWidth = 1;
+  for(let i=-h;i<w;i+=4*dpr){ ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i+h,h); ctx.stroke(); }
+
+  // grain
+  const grains = (w*h)/55;
+  for(let i=0;i<grains;i++){
+    ctx.fillStyle = Math.random()>.5 ? "rgba(255,255,255,.35)" : "rgba(40,40,80,.08)";
+    ctx.fillRect(Math.random()*w, Math.random()*h, dpr, dpr);
+  }
+
+  // scattered star pattern
+  ctx.fillStyle = "rgba(90,80,150,.13)";
+  const step = 46*dpr;
+  for(let y=step/2;y<h;y+=step) for(let x=(y/step%2?step/2:0)+step/4;x<w;x+=step){
+    starPath(ctx,x,y,5*dpr); ctx.fill();
+  }
+
+  // inner stitched border
+  ctx.setLineDash([2*dpr,6*dpr]); ctx.lineCap="round";
+  ctx.strokeStyle = "rgba(70,60,130,.35)"; ctx.lineWidth = 1.5*dpr;
+  const m = 16*dpr;
+  ctx.beginPath(); ctx.roundRect ? ctx.roundRect(m,m,w-2*m,h-2*m,16*dpr) : ctx.rect(m,m,w-2*m,h-2*m); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // center label (embossed)
+  const cx = w/2, cy = h/2;
+  ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  ctx.font = `italic 400 ${34*dpr}px Fraunces, Georgia, serif`;
+  ctx.fillStyle = "rgba(255,255,255,.85)"; ctx.fillText("Scratch here", cx, cy + 1.5*dpr);
+  ctx.fillStyle = "#4a3f86"; ctx.fillText("Scratch here", cx, cy);
+  ctx.font = `500 ${13*dpr}px Figtree, system-ui, sans-serif`;
+  ctx.fillStyle = "rgba(74,63,134,.7)";
+  ctx.fillText("something little is hiding underneath", cx, cy + 34*dpr);
+  starPath(ctx, cx, cy - 46*dpr, 11*dpr); ctx.fillStyle = "#4a3f86"; ctx.fill();
+}
+
+function pos(e){
+  const r = canvas.getBoundingClientRect();
+  return { x:(e.clientX - r.left)*dpr, y:(e.clientY - r.top)*dpr, cx:e.clientX, cy:e.clientY };
+}
+function scratch(a, b){
+  ctx.globalCompositeOperation = "destination-out";
+  ctx.lineWidth = 44*dpr; ctx.lineCap = "round"; ctx.lineJoin = "round";
+  ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
+  if(!reduceMotion) for(let i=0;i<3;i++) dust(b.cx, b.cy);
+}
+function progress(){
+  const data = ctx.getImageData(0,0,canvas.width,canvas.height).data;
+  let clear = 0, total = 0;
+  for(let i=3;i<data.length;i+=4*24){ total++; if(data[i] < 40) clear++; }
+  const p = clear/total;
+  const shown = Math.min(100, Math.round(p / CONFIG.revealAt * 100));
+  $("bar").style.width = shown + "%"; $("pct").textContent = shown + "%";
+  if(p >= CONFIG.revealAt) reveal();
+}
+function begin(){
+  if(started) return; started = true;
+  $("hint").classList.add("off"); $("sheen").classList.add("off");
+}
+
+canvas.addEventListener("pointerdown", e => {
+  if(revealed) return;
+  drawing = true; canvas.setPointerCapture(e.pointerId);
+  last = pos(e); begin(); scratch(last,last);
+});
+canvas.addEventListener("pointermove", e => {
+  if(!drawing || revealed) return;
+  const events = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
+  for(const ev of events){ const p = pos(ev); scratch(last,p); last = p; }
+  if(++moves % 6 === 0) progress();
+});
+["pointerup","pointercancel","pointerleave"].forEach(t => canvas.addEventListener(t, () => {
+  if(drawing){ drawing = false; progress(); }
+}));
+
+/* ---------- Particles: dust + confetti ---------- */
+const fx = $("fx"), fctx = fx.getContext("2d");
+let parts = [], running = false;
+function sizeFx(){
+  const d = Math.min(devicePixelRatio || 1, 2);
+  fx.width = innerWidth*d; fx.height = innerHeight*d; fctx.setTransform(d,0,0,d,0,0);
+}
+const COLORS = ["#c3b4f5","#ffcbb8","#bff0dc","#fff8f0","#ffe39a","#f7b6d2"];
+function dust(x,y){
+  parts.push({ x, y, vx:(Math.random()-.5)*1.6, vy:Math.random()*-1.2, g:.06, r:Math.random()*2+.8,
+    life:1, decay:.02+Math.random()*.02, shape:"dot", c:Math.random()>.5?"#fff8f0":"#d9d0ff", rot:0, vr:0 });
+  loop();
+}
+function burst(x, y, n, spread, power, dir=0){
+  for(let i=0;i<n;i++){
+    const a = -Math.PI/2 + dir + (Math.random()-.5)*spread, v = power*(.5+Math.random());
+    parts.push({ x, y, vx:Math.cos(a)*v, vy:Math.sin(a)*v, g:.18, r:Math.random()*6+4,
+      life:1, decay:.004+Math.random()*.004,
+      shape:["rect","star","dot","heart"][Math.floor(Math.random()*4)],
+      c:COLORS[Math.floor(Math.random()*COLORS.length)],
+      rot:Math.random()*6, vr:(Math.random()-.5)*.25, wob:Math.random()*10 });
+  }
+  loop();
+}
+function heart(c,s){
+  c.beginPath(); c.moveTo(0,s*.3);
+  c.bezierCurveTo(-s,-s*.4,-s*.4,-s,0,-s*.35);
+  c.bezierCurveTo(s*.4,-s,s,-s*.4,0,s*.3); c.fill();
+}
+function loop(){
+  if(running) return; running = true;
+  const tick = () => {
+    fctx.clearRect(0,0,innerWidth,innerHeight);
+    parts = parts.filter(p => p.life > 0 && p.y < innerHeight + 40);
+    for(const p of parts){
+      p.vx *= .99; p.vy += p.g; p.x += p.vx + (p.wob ? Math.sin((p.wob += .1))*.6 : 0); p.y += p.vy;
+      p.rot += p.vr; p.life -= p.decay;
+      fctx.save(); fctx.globalAlpha = Math.max(0,p.life); fctx.fillStyle = p.c;
+      fctx.translate(p.x,p.y); fctx.rotate(p.rot);
+      if(p.shape==="rect") fctx.fillRect(-p.r/2,-p.r/4,p.r,p.r/2);
+      else if(p.shape==="star"){ starPath(fctx,0,0,p.r); fctx.fill(); }
+      else if(p.shape==="heart") heart(fctx,p.r);
+      else { fctx.beginPath(); fctx.arc(0,0,p.r/2,0,Math.PI*2); fctx.fill(); }
+      fctx.restore();
+    }
+    if(parts.length) requestAnimationFrame(tick); else { running = false; fctx.clearRect(0,0,innerWidth,innerHeight); }
+  };
+  requestAnimationFrame(tick);
+}
+
+/* ---------- Reveal ---------- */
+function reveal(){
+  if(revealed) return; revealed = true; drawing = false;
+  canvas.classList.add("gone");
+  $("bar").style.width = "100%"; $("pct").textContent = "100%";
+  $("meter").classList.add("done");
+  $("after").classList.add("show");
+  navigator.vibrate && navigator.vibrate([30,60,30]);
+  if(reduceMotion) return;
+  const r = $("card").getBoundingClientRect();
+  burst(r.left + r.width/2, r.top + r.height/2, 140, Math.PI*1.2, 14);
+  setTimeout(() => { burst(0, innerHeight, 70, .6, 20, .55); burst(innerWidth, innerHeight, 70, .6, 20, -.55); }, 350);
+  setTimeout(() => $("after").scrollIntoView({ behavior:"smooth", block:"center" }), 900);
+}
+
+$("againBtn").onclick = () => {
+  revealed = false; started = false; moves = 0;
+  canvas.classList.remove("gone"); $("after").classList.remove("show"); $("meter").classList.remove("done");
+  $("hint").classList.remove("off"); $("sheen").classList.remove("off");
+  $("bar").style.width = "0"; $("pct").textContent = "0%";
+  paintFoil();
+  $("card").scrollIntoView({ behavior:"smooth", block:"center" });
+};
+
+$("shareBtn").onclick = async () => {
+  const data = { title:CONFIG.headline, text:"Scratch the card to find out our news!", url:location.href };
+  try{
+    if(navigator.share){ await navigator.share(data); return; }
+    await navigator.clipboard.writeText(location.href); toast("Link copied");
+  }catch(err){ if(err.name !== "AbortError") toast("Copy the link from your address bar"); }
+};
+function toast(msg){
+  const t = $("toast"); t.textContent = msg; t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 2200);
+}
+
+/* ---------- Init ---------- */
+let resizeTimer;
+addEventListener("resize", () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => { sizeSky(); sizeFx(); if(!revealed && !started) paintFoil(); }, 150);
+});
+sizeFx();
+(document.fonts ? document.fonts.ready : Promise.resolve()).then(paintFoil);
+paintFoil();
+</script>
+</body>
+</html>
