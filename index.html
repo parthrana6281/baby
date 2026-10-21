@@ -83,7 +83,10 @@ body.locked{overflow:hidden}
 #diwali{position:fixed;inset:0;z-index:2;pointer-events:none;
   clip-path:circle(0px at var(--wx,50%) var(--wy,50%));
   transition:clip-path 2.1s cubic-bezier(.65,0,.25,1)}
-#fw{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:3}
+#skyGlow{position:fixed;inset:0;pointer-events:none;z-index:3;opacity:0;mix-blend-mode:screen}
+#smoke,#fw{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:3}
+body.show #smoke{z-index:54}
+body.show #fw{z-index:55}
 #fx{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:60}
 #flash{position:fixed;inset:0;z-index:45;pointer-events:none;background:#dfe6ff;opacity:0}
 
@@ -371,7 +374,20 @@ body.diwali .card{box-shadow:0 0 0 1px rgba(246,210,122,.65), 0 0 0 7px rgba(14,
 .after{display:flex;flex-direction:column;align-items:center;gap:12px;
   max-height:0;opacity:0;overflow:hidden;transform:translateY(14px);
   transition:max-height 1s ease, opacity 1s ease .3s, transform 1s ease .3s}
-.after.show{max-height:520px;opacity:1;transform:none}
+.after.show{max-height:1000px;opacity:1;transform:none}
+.song{width:min(86vw,390px);margin-top:22px;display:flex;flex-direction:column;align-items:center;gap:10px}
+.song[hidden]{display:none}
+.song-label{display:flex;align-items:center;gap:8px;font:600 .82rem var(--sans);letter-spacing:.14em;text-transform:uppercase;color:rgba(246,210,122,.85)}
+.song-label i{display:inline-flex;gap:2px;align-items:flex-end;height:12px}
+.song-label i b{width:3px;background:var(--gold);border-radius:2px;animation:eq 1s ease-in-out infinite alternate}
+.song-label i b:nth-child(2){animation-delay:-.4s}.song-label i b:nth-child(3){animation-delay:-.7s}
+.song:not(.playing) .song-label i b{animation:none;height:4px}
+@keyframes eq{from{height:3px}to{height:12px}}
+.song-frame{position:relative;width:100%;aspect-ratio:16/9;min-height:200px;border-radius:16px;overflow:hidden;background:#000;
+  box-shadow:0 0 0 1px rgba(246,210,122,.45), 0 18px 40px -16px rgba(0,0,0,.8)}
+.song-frame iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.song-tip{font-size:.85rem;color:rgba(255,240,215,.7)}
+.song-tip[hidden]{display:none}
 .after h2{
   font-family:var(--festive);font-weight:400;font-size:clamp(1.9rem,6.6vw,3rem);line-height:1.15;max-width:16ch;text-wrap:balance;
   background:linear-gradient(180deg,#fffaf0 10%,var(--gold) 55%,var(--marigold));
@@ -503,6 +519,8 @@ body.sweet .eyes{display:none}
   <div class="dsky"></div>
 </div>
 
+<div id="skyGlow" aria-hidden="true"></div>
+<canvas id="smoke" aria-hidden="true"></canvas>
 <canvas id="fw" aria-hidden="true"></canvas>
 <div class="vignette" aria-hidden="true"></div>
 <div id="flash" aria-hidden="true"></div>
@@ -611,6 +629,11 @@ body.sweet .eyes{display:none}
       <button class="primary" id="shareBtn">Share the news</button>
       <button class="ghostBtn" id="againBtn">Watch again</button>
     </div>
+    <div class="song" id="song">
+      <p class="song-label"><i aria-hidden="true"><b></b><b></b><b></b></i><span id="songLabel"></span></p>
+      <div class="song-frame"><div id="ytPlayer"></div></div>
+      <p class="song-tip" id="songTip" hidden>Tap the video to play our song 🎶</p>
+    </div>
   </section>
 </main>
 
@@ -625,7 +648,7 @@ const CONFIG = {
   names:          "Shivani & Parth",
 
   // Part 1 — Halloween (before the scratch)
-  halloweenFrom:  "A message from",
+  halloweenFrom:  "A Halloween message from",
   headline:       "Something is coming…",
 
   // Part 2 — Diwali (after the scratch)
@@ -649,6 +672,15 @@ const CONFIG = {
     { src:"photos/4-bench.jpg",   alt:"Sitting on a stone bench in the fall leaves with our dog holding the ultrasound", focus:"50% 70%" }
   ],
   slideSeconds:   4.8,   // how long each photo stays on screen
+
+  // Music that starts the moment the firework is lit (any YouTube video ID —
+  // the part after "watch?v=" in the link). The Halloween part keeps its own music.
+  song: {
+    youtubeId: "tCgEd5pLLy8",
+    startAt:   0,         // seconds into the song to start from
+    volume:    75,        // 0–100, leaves room for the firework sounds
+    label:     "Our song"
+  },
   revealAt:       0.55,  // reveal automatically after 55% is scratched
   lightning:      true   // lightning flashes in the Halloween part
 };
@@ -873,7 +905,7 @@ const Sound = {
     this.sweet.gain.cancelScheduledValues(t);
     this.sweet.gain.setValueAtTime(this.sweet.gain.value, t);
     this.sweet.gain.linearRampToValueAtTime(0, t+1);
-    this.token++; this.ragaOn = false;
+    this.token++; this.ragaOn = false; this.songOn = false;
     if(!this.melodyOn){ this.melodyOn = true; this.melody(); }
   },
   drone(){
@@ -976,13 +1008,13 @@ const Sound = {
     });
   },
   tanpura(token){
-    if(token !== this.token || !this.ctx) return;
+    if(token !== this.token || !this.ctx || this.songOn) return;
     const t = this.ctx.currentTime + .05, S = 138.59;
     [[S*.75,0],[S,1.1],[S,1.95],[S/2,2.8]].forEach(([f,dt]) => this.pluck(f, t+dt, .34, 4.6, .9985, this.tan));
     setTimeout(() => this.tanpura(token), 4400);
   },
   raga(token, i){
-    if(token !== this.token || !this.ctx) return;
+    if(token !== this.token || !this.ctx || this.songOn) return;
     // An original phrase set in the scale of Raag Yaman
     const R = {S:1,R:9/8,G:5/4,m:45/32,P:3/2,D:5/3,N:15/8}, base = 277.18, beat = .3;
     const phrases = [
@@ -1013,9 +1045,10 @@ const Sound = {
     const token = ++this.token;
     this.bell(t+.2);
     setTimeout(() => this.tanpura(token), 1500);
+    setTimeout(() => this.ambience(token), 2500);
   },
   startRaga(){
-    if(!this.ctx || this.ragaOn) return;
+    if(!this.ctx || this.ragaOn || this.songOn) return;
     this.ragaOn = true; this.raga(this.token, 0);
   },
 
@@ -1150,6 +1183,11 @@ const Sound = {
     const sG = c.createGain(); sG.gain.setValueAtTime(0, t); sG.gain.linearRampToValueAtTime(.85*size, t+.006);
     sG.gain.exponentialRampToValueAtTime(.001, t+.6);
     s.connect(sG); sG.connect(o); s.start(t); s.stop(t+.65);
+    // mid-range punch that phone speakers can reproduce
+    const m = this.noiseSrc(), mb = c.createBiquadFilter(); mb.type = "bandpass"; mb.frequency.value = 210; mb.Q.value = 1.1;
+    const mG = c.createGain(); mG.gain.setValueAtTime(0, t); mG.gain.linearRampToValueAtTime(1.1*size, t+.005);
+    mG.gain.exponentialRampToValueAtTime(.001, t+.45);
+    m.connect(mb); mb.connect(mG); mG.connect(o); m.start(t, Math.random()); m.stop(t+.5);
     // long rolling rumble across the sky
     const r = this.noiseSrc(), rl = c.createBiquadFilter(); rl.type = "lowpass"; rl.frequency.value = 170;
     const rG = c.createGain(); rG.gain.setValueAtTime(0, t); rG.gain.linearRampToValueAtTime(.32*size, t+.12);
@@ -1190,9 +1228,62 @@ const Sound = {
     this.crackle(delay+.2, dur-.3, 120, 0, .45);
   },
 
+  // crossette stars splitting: a quick ragged cluster of snaps
+  snaps(delay, pan){
+    if(!this.ctx) return;
+    const c = this.ctx, n = 4 + Math.floor(Math.random()*4);
+    for(let i=0;i<n;i++){
+      const t = c.currentTime + delay + Math.random()*.14, s = this.noiseSrc();
+      const bp = c.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.value = rand(1400,3200); bp.Q.value = .8;
+      const g = c.createGain(); g.gain.setValueAtTime(rand(.25,.45), t); g.gain.exponentialRampToValueAtTime(.001, t+.035);
+      const o = this.out(pan + rand(-.2,.2), .6);
+      s.connect(bp); bp.connect(g); g.connect(o); s.start(t, Math.random()); s.stop(t+.05);
+    }
+  },
+  // a firecracker string (ladi): a long rattle of bangs, generated as one buffer
+  ladiBuf(){
+    const key = "ladi" + Math.floor(Math.random()*3);
+    if(this.cache[key]) return this.cache[key];
+    const c = this.ctx, sr = c.sampleRate, dur = rand(2.5,4.5), n = Math.floor(sr*dur), buf = c.createBuffer(1, n, sr), d = buf.getChannelData(0);
+    let at = 0;
+    while(at < n - sr*.05){
+      const L = Math.floor(sr*rand(.012,.03)), amp = rand(.35,1);
+      let lp = 0;
+      for(let j=0;j<L;j++){ lp = lp*.35 + (Math.random()*2-1)*.65; d[at+j] += lp*amp*Math.exp(-j/(L*.22)); }
+      at += Math.floor(sr*(Math.random() < .06 ? rand(.12,.3) : rand(.035,.085)));
+    }
+    return this.cache[key] = buf;
+  },
+  ladi(pan, vol){
+    const c = this.ctx, t = c.currentTime + .05, s = c.createBufferSource(); s.buffer = this.ladiBuf();
+    const lp = c.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = rand(1800,3200);
+    const o = this.out(pan, .85); o.gain.value = vol;
+    s.connect(lp); lp.connect(o); s.start(t);
+  },
+  distantBoom(pan, vol){
+    const c = this.ctx, t = c.currentTime + .05, s = this.noiseSrc();
+    const lp = c.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = rand(280,480);
+    const g = c.createGain(); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t+.02);
+    g.gain.exponentialRampToValueAtTime(vol*.2, t+.4); g.gain.exponentialRampToValueAtTime(.0005, t+2.6);
+    const o = this.out(pan, 1);
+    s.connect(lp); lp.connect(g); g.connect(o); s.start(t, Math.random()); s.stop(t+2.7);
+  },
+  // the neighbourhood celebrating in the distance all night
+  ambience(token){
+    if(token !== this.token || !this.ctx) return;
+    if(!document.hidden){
+      const r = Math.random(), pan = rand(-.9,.9);
+      if(r < .5){ this.distantBoom(pan, rand(.12,.24)); if(Math.random() < .4) setTimeout(() => this.distantBoom(pan + rand(-.2,.2), rand(.08,.16)), rand(300,900)); }
+      else if(r < .8) this.ladi(pan, rand(.1,.2));
+      else this.crackle(0, 1.6, 60, pan, rand(.08,.14));
+    }
+    setTimeout(() => this.ambience(token), rand(2200,6000));
+  },
+
   toggle(){
     if(!this.ctx) return;
     this.muted = !this.muted;
+    Song.mute(this.muted);
     const t = this.ctx.currentTime;
     this.master.gain.cancelScheduledValues(t);
     this.master.gain.setValueAtTime(this.master.gain.value, t);
@@ -1208,6 +1299,73 @@ document.addEventListener("visibilitychange", () => {
   document.hidden ? Sound.ctx.suspend() : Sound.ctx.resume();
 });
 $("muteBtn").onclick = () => Sound.toggle();
+
+
+/* =========================================================
+   🎶 SONG — YouTube player that takes over when the firework is lit
+   ========================================================= */
+const Song = {
+  player:null, ready:false, failed:false, active:false, wasPlaying:false,
+  init(){
+    const cfg = CONFIG.song;
+    $("songLabel").textContent = cfg.label;
+    if(!cfg || !cfg.youtubeId){ this.fail(); return; }
+    window.onYouTubeIframeAPIReady = () => {
+      try{
+        this.player = new YT.Player("ytPlayer", {
+          videoId: cfg.youtubeId,
+          playerVars: { playsinline:1, rel:0, modestbranding:1, loop:1, playlist:cfg.youtubeId, start:cfg.startAt|0,
+                        ...(location.protocol.startsWith("http") ? { origin:location.origin } : {}) },
+          events: {
+            onReady: () => { this.ready = true; this.player.setVolume(cfg.volume); },
+            onError: () => this.fail(),
+            onStateChange: e => {
+              const playing = e.data === 1;
+              $("song").classList.toggle("playing", playing);
+              if(playing){ $("songTip").hidden = true; Sound.songOn = true; }
+            }
+          }
+        });
+      }catch(err){ this.fail(); }
+    };
+    const tag = document.createElement("script");
+    tag.src = "https://www.youtube.com/iframe_api";
+    tag.onerror = () => this.fail();
+    document.head.appendChild(tag);
+    document.addEventListener("visibilitychange", () => {
+      if(!this.player || !this.active) return;
+      if(document.hidden){ this.wasPlaying = this.isPlaying(); if(this.wasPlaying) this.player.pauseVideo(); }
+      else if(this.wasPlaying) this.player.playVideo();
+    });
+  },
+  fail(){
+    this.failed = true; $("song").hidden = true;
+    if(this.active){ this.active = false; Sound.songOn = false; Sound.startRaga(); }
+  },
+  isPlaying(){ try{ return this.player && [1,3].includes(this.player.getPlayerState()); }catch(e){ return false; } },
+  play(){
+    if(this.failed || !this.ready) return;
+    this.active = true;
+    Sound.songOn = true;                               // the synthesized Diwali music steps aside
+    try{
+      if(Sound.muted) this.player.mute(); else this.player.unMute();
+      this.player.seekTo(CONFIG.song.startAt|0, true);
+      this.player.playVideo();
+    }catch(e){}
+    // if the phone blocked playback, fall back to the built-in music and invite a tap on the video
+    setTimeout(() => {
+      if(!this.active || this.isPlaying()) return;
+      Sound.songOn = false; Sound.tanpura(Sound.token); Sound.startRaga();
+      $("songTip").hidden = false;
+    }, 2800);
+  },
+  stop(){
+    this.active = false; $("songTip").hidden = true; $("song").classList.remove("playing");
+    try{ if(this.player && this.ready){ this.player.pauseVideo(); this.player.seekTo(CONFIG.song.startAt|0, true); } }catch(e){}
+  },
+  mute(m){ try{ if(this.player && this.ready) m ? this.player.mute() : this.player.unMute(); }catch(e){} }
+};
+Song.init();
 
 /* ---------- Gate ---------- */
 $("enterBtn").onclick = () => {
@@ -1314,9 +1472,21 @@ function warmFlash(strength){
 
 /* =========================================================
    ✨ PARTICLE ENGINES
-   fw  = fireworks in the sky (behind the card, with light trails)
-   fx  = sparks in front (scratch embers, the anaar fountain)
+   SKY = fireworks (light trails, glowing stars)
+   FX  = sparks in front (scratch embers, the anaar fountain)
    ========================================================= */
+const spriteCache = {};
+function hexA(h, a){ const n = parseInt(h.slice(1), 16); return `rgba(${n>>16&255},${n>>8&255},${n&255},${a})`; }
+function sprite(col){
+  if(spriteCache[col]) return spriteCache[col];
+  const s = document.createElement("canvas"); s.width = s.height = 64;
+  const g = s.getContext("2d"), gr = g.createRadialGradient(32,32,0,32,32,32);
+  gr.addColorStop(0, "rgba(255,255,255,1)"); gr.addColorStop(.1, hexA(col,1)); gr.addColorStop(.28, hexA(col,.38));
+  gr.addColorStop(.6, hexA(col,.08)); gr.addColorStop(1, hexA(col,0));
+  g.fillStyle = gr; g.fillRect(0,0,64,64);
+  return spriteCache[col] = s;
+}
+
 function makeEngine(canvas, trails){
   const c = canvas.getContext("2d");
   const E = { P:[], R:[], W:0, H:0, onFrame:null, keepAlive:null, running:false };
@@ -1327,7 +1497,7 @@ function makeEngine(canvas, trails){
     canvas.width = E.W*d; canvas.height = E.H*d; c.setTransform(d,0,0,d,0,0);
   };
   E.add = p => {
-    if(E.P.length > 2600) return;
+    if(E.P.length > 3200) return;
     E.P.push(Object.assign({vx:0,vy:0,g:0,drag:1,life:1,decay:.02,s:1.5,c:"#ffd27a",streak:0,tw:false,fi:false}, p));
     E.start();
   };
@@ -1345,27 +1515,42 @@ function makeEngine(canvas, trails){
       const r = E.R[i];
       r.t += dt/60;
       const k = Math.min(1, r.t/r.T), e = 1 - Math.pow(1-k, 2.3);
-      const x = r.x0 + (r.x1-r.x0)*e + Math.sin(r.t*14)*1.2, y = r.y0 + (r.y1-r.y0)*e;
-      E.add({x, y, vx:rand(-.3,.3), vy:rand(.3,1.3), g:.03, drag:.96, decay:rand(.035,.06), s:rand(.8,1.5), c:"#ffcf8a"});
-      c.globalAlpha = 1; c.fillStyle = "#fff8e8"; c.beginPath(); c.arc(x,y,2.1,0,6.283); c.fill();
+      const x = r.x0 + (r.x1-r.x0)*e + Math.sin(r.t*16 + r.ph)*1.4*(1-k), y = r.y0 + (r.y1-r.y0)*e;
+      for(let j=0;j<2;j++) E.add({x:x+rand(-1,1), y, vx:rand(-.45,.45), vy:rand(.4,1.6), g:.035, drag:.95, decay:rand(.03,.055), s:rand(.7,1.3), c:pick(["#ffcf8a","#ffb35c","#fff0c8"])});
+      c.globalAlpha = 1; c.drawImage(sprite("#ffe2b0"), x-9, y-9, 18, 18);
       if(k >= 1){ E.R.splice(i,1); r.burst(x,y); }
     }
 
-    const P = E.P;
+    const P = E.P, t = now;
     for(let i=P.length-1;i>=0;i--){
       const p = P[i];
       p.vx *= p.drag; p.vy = p.vy*p.drag + p.g*dt;
       p.x += p.vx*dt; p.y += p.vy*dt; p.life -= p.decay*dt;
+      if(p.c2 && p.life < p.cAt){ p.c = p.c2; p.c2 = null; }                       // colour-changing stars
+      if(p.trail && Math.random() < p.trail*dt)                                         // brocade / palm tails
+        E.add({x:p.x, y:p.y, vx:rand(-.25,.25), vy:rand(-.1,.5), g:.025, drag:.95, decay:rand(.025,.045), s:rand(.6,1), c:p.tc || "#ffb347"});
+      if(p.split && p.life < p.split){                                                   // crossette: star splits in four
+        p.split = 0; p.life = 0;
+        for(let k=0;k<4;k++){ const a = p.sa + k*Math.PI/2, v = rand(2,2.6)*vScale();
+          E.add({x:p.x, y:p.y, vx:Math.cos(a)*v + p.vx*.3, vy:Math.sin(a)*v + p.vy*.3, g:.04, drag:.95, decay:rand(.026,.034), s:1.3, c:p.c, tw:true}); }
+      }
+      if(p.pop && p.life < .1){                                                          // crackling star ends in a white pop
+        p.pop = false; p.life = 0;
+        E.add({x:p.x, y:p.y, s:3.2, decay:.22, c:"#ffffff"});
+        for(let k=0;k<3;k++) E.add({x:p.x, y:p.y, vx:rand(-1.6,1.6), vy:rand(-1.6,1.6), drag:.9, decay:rand(.09,.14), s:.7, c:"#fff6e0"});
+      }
       if(p.life <= 0){ P[i] = P[P.length-1]; P.pop(); continue; }
       let a = p.life;
       if(p.fi) a = Math.min(a, (1-p.life)*5);
       if(p.tw && p.life < .55) a *= Math.random() < .5 ? 1 : .12;
+      if(p.strobe) a = Math.sin(t*p.strobe + p.ph) > .25 ? Math.min(1, a*1.6) : 0;
+      if(a <= 0) continue;
       c.globalAlpha = a > 1 ? 1 : a;
       if(p.streak){
         c.strokeStyle = p.c; c.lineWidth = p.s; c.lineCap = "round";
         c.beginPath(); c.moveTo(p.x - p.vx*p.streak, p.y - p.vy*p.streak); c.lineTo(p.x, p.y); c.stroke();
       } else {
-        c.fillStyle = p.c; c.beginPath(); c.arc(p.x, p.y, p.s, 0, 6.283); c.fill();
+        const r = p.s*4.2; c.drawImage(sprite(p.c), p.x - r, p.y - r, r*2, r*2);
       }
     }
     c.globalAlpha = 1;
@@ -1385,79 +1570,170 @@ SKY.keepAlive = () => document.body.classList.contains("diwali") && !reduceMotio
 SKY.onFrame = dt => {
   if(!SKY.keepAlive() || document.hidden) return;
   if(Math.random() < .12*dt) SKY.add({x:rand(0,SKY.W), y:rand(SKY.H*.35, SKY.H), vx:rand(-.12,.12), vy:-rand(.12,.35), drag:1, g:0,
-    decay:rand(.003,.006), s:rand(.6,1.4), c:pick(["#ffd27a","#ffb347","#fff1c8"]), fi:true});
+    decay:rand(.003,.006), s:rand(.5,1.1), c:pick(["#ffd27a","#ffb347","#fff1c8"]), fi:true});
 };
+
+/* ---------- Smoke left hanging after each burst, faintly lit by its colour ---------- */
+const Smoke = (() => {
+  const cv = $("smoke"), c = cv.getContext("2d"), list = [];
+  let running = false, last = 0;
+  const size = () => { const d = Math.min(devicePixelRatio||1, 2); cv.width = innerWidth*d; cv.height = innerHeight*d; c.setTransform(d,0,0,d,0,0); };
+  function tick(now){
+    const dt = last ? Math.min(3, (now-last)/16.667) : 1; last = now;
+    c.clearRect(0,0,innerWidth,innerHeight);
+    for(let i=list.length-1;i>=0;i--){
+      const p = list[i];
+      p.x += p.vx*dt; p.y += p.vy*dt; p.r += p.gr*dt; p.life -= p.decay*dt;
+      if(p.life <= 0){ list.splice(i,1); continue; }
+      c.globalAlpha = Math.min(1, (1-p.life)*6) * p.life * p.a;
+      c.drawImage(sprite(p.c), p.x - p.r, p.y - p.r, p.r*2, p.r*2);
+    }
+    c.globalAlpha = 1;
+    if(list.length) requestAnimationFrame(tick); else { running = false; last = 0; c.clearRect(0,0,innerWidth,innerHeight); }
+  }
+  return {
+    size,
+    clear(){ list.length = 0; },
+    puff(x, y, col, spread){
+      if(reduceMotion) return;
+      for(let i=0;i<7;i++){
+        const a = rand(0,6.283), d = rand(0, spread);
+        list.push({x:x+Math.cos(a)*d, y:y+Math.sin(a)*d, vx:rand(-.12,.12)+.08, vy:rand(-.05,.12), r:rand(30,60), gr:rand(.15,.35),
+          life:1, decay:rand(.0028,.004), a:rand(.08,.14), c:Math.random() < .5 ? col : "#b9a6c9"});
+      }
+      if(!running){ running = true; requestAnimationFrame(tick); }
+    }
+  };
+})();
+Smoke.size();
+
+/* ---------- The sky lights up with each burst ---------- */
+function skyGlow(x, y, col, strength){
+  const g = $("skyGlow");
+  g.style.transition = "none";
+  g.style.background = `radial-gradient(circle at ${x}px ${y}px, ${hexA(col,.55)} 0, ${hexA(col,.18)} 22%, transparent 55%)`;
+  g.style.opacity = String(strength);
+  requestAnimationFrame(() => requestAnimationFrame(() => { g.style.transition = "opacity 1.4s ease-out"; g.style.opacity = "0"; }));
+}
 
 /* ---------- Fireworks ---------- */
 const PAL = {
   gold:["#ffd27a","#ffe9b8","#ffb347"], rani:["#ff3d9a","#ff7ac0","#ffd1e8"], teal:["#3fe0d0","#a6fff3","#e8fffb"],
-  violet:["#b388ff","#e0ccff"], marigold:["#ff9f1c","#ffc15e","#ffe29a"], green:["#9cff7a","#e4ffd6"], white:["#fff6e0"]
+  violet:["#b388ff","#e0ccff"], marigold:["#ff9f1c","#ffc15e","#ffe29a"], green:["#9cff7a","#e4ffd6"], white:["#fff6e0"],
+  red:["#ff4d4d","#ff8a7a"], blue:["#5aa9ff","#b8dcff"]
 };
+const COLOR_SETS = [PAL.gold, PAL.rani, PAL.teal, PAL.violet, PAL.marigold, PAL.green, PAL.red, PAL.blue];
 const vScale = () => Math.min(1.35, .6 + innerWidth/1200);
-function flashAt(x, y, col){ SKY.add({x, y, s:16, decay:.16, c:col || "#fff3d6"}); }
+function shell(n, v, fn){                       // evenly spread stars on a sphere seen from the side
+  for(let i=0;i<n;i++){ const a = rand(0,6.283), u = rand(-1,1), sp = v*Math.sqrt(1-u*u)*rand(.93,1); fn(Math.cos(a)*sp, Math.sin(a)*sp, i); }
+}
+function afterBurst(x, y, col, big){
+  SKY.add({x, y, s:big ? 22 : 15, decay:.14, c:"#fff3d6"});
+  skyGlow(x, y, col, big ? .55 : .38);
+  Smoke.puff(x, y, col, 50*vScale());
+}
 const Bursts = {
   peony(x, y, cols){
-    const n = 120, v = rand(4.2,5.2)*vScale();
-    for(let i=0;i<n;i++){
-      const a = rand(0,6.283), u = rand(-1,1), sp = v*Math.sqrt(1-u*u)*rand(.92,1);
-      SKY.add({x, y, vx:Math.cos(a)*sp, vy:Math.sin(a)*sp, g:.045, drag:.964, decay:rand(.010,.015), s:rand(1.3,1.9), c:pick(cols), tw:Math.random()<.35});
-    }
-    flashAt(x,y);
+    shell(130, rand(4.2,5.2)*vScale(), (vx,vy) => SKY.add({x, y, vx, vy, g:.045, drag:.964, decay:rand(.010,.015), s:rand(1.1,1.6), c:pick(cols), tw:Math.random()<.3}));
+    afterBurst(x, y, cols[0]);
+  },
+  chrys(x, y, cols){
+    const c2 = pick(COLOR_SETS.filter(s => s !== cols));
+    shell(140, rand(4.4,5.3)*vScale(), (vx,vy) => SKY.add({x, y, vx, vy, g:.042, drag:.963, decay:rand(.009,.012), s:1.4, c:pick(cols), c2:pick(c2), cAt:.5, trail:.15, tc:"#ffcf8a"}));
+    afterBurst(x, y, cols[0]);
   },
   ring(x, y, cols, inner){
     const n = 72, v = rand(4.4,5.2)*vScale(), tilt = rand(0,Math.PI), sq = rand(.4,.7);
     for(let i=0;i<n;i++){
       const a = 6.283*i/n, rx = Math.cos(a)*v, ry = Math.sin(a)*v*sq;
-      SKY.add({x, y, vx:rx*Math.cos(tilt) - ry*Math.sin(tilt), vy:rx*Math.sin(tilt) + ry*Math.cos(tilt), g:.035, drag:.965, decay:rand(.011,.014), s:1.7, c:pick(cols)});
+      SKY.add({x, y, vx:rx*Math.cos(tilt) - ry*Math.sin(tilt), vy:rx*Math.sin(tilt) + ry*Math.cos(tilt), g:.035, drag:.965, decay:rand(.011,.014), s:1.5, c:pick(cols)});
     }
     const ic = inner || PAL.gold;
     for(let i=0;i<40;i++){ const a = rand(0,6.283), sp = rand(.5,2.2)*vScale();
-      SKY.add({x, y, vx:Math.cos(a)*sp, vy:Math.sin(a)*sp, g:.03, drag:.96, decay:rand(.014,.02), s:1.4, c:pick(ic), tw:true}); }
-    flashAt(x,y);
+      SKY.add({x, y, vx:Math.cos(a)*sp, vy:Math.sin(a)*sp, g:.03, drag:.96, decay:rand(.014,.02), s:1.2, c:pick(ic), tw:true}); }
+    afterBurst(x, y, cols[0]);
   },
   willow(x, y){
-    const n = 100, v = rand(3.6,4.4)*vScale();
-    for(let i=0;i<n;i++){
-      const a = rand(0,6.283), u = rand(-1,1), sp = v*Math.sqrt(1-u*u);
-      SKY.add({x, y, vx:Math.cos(a)*sp, vy:Math.sin(a)*sp, g:.03, drag:.955, decay:rand(.0055,.008), s:rand(1.1,1.6), c:pick(["#ffcf6a","#ffb347","#ffe2a8"]), tw:true});
-    }
-    flashAt(x,y,"#ffe2b0");
+    shell(110, rand(3.6,4.4)*vScale(), (vx,vy) => SKY.add({x, y, vx, vy, g:.03, drag:.955, decay:rand(.0055,.008), s:rand(1,1.4), c:pick(["#ffcf6a","#ffb347","#ffe2a8"]), tw:true, trail:.35, tc:"#ffb347"}));
+    afterBurst(x, y, "#ffb347");
+  },
+  kamuro(x, y){
+    shell(90, rand(3.8,4.6)*vScale(), (vx,vy) => SKY.add({x, y, vx, vy, g:.022, drag:.952, decay:rand(.0045,.006), s:1.5, c:pick(["#ffd27a","#ffe9b8"]), trail:.6, tc:"#ffb347", tw:true}));
+    afterBurst(x, y, "#ffd27a", true);
+  },
+  crackling(x, y){
+    shell(120, rand(4,4.8)*vScale(), (vx,vy) => SKY.add({x, y, vx, vy, g:.04, drag:.96, decay:rand(.0115,.0135), s:1.2, c:pick(["#ffe9b8","#ffd27a","#fff6e0"]), trail:.2, tc:"#ffcf8a", pop:true}));
+    afterBurst(x, y, "#ffd27a");
+  },
+  crossette(x, y, cols){
+    const n = 22, v = rand(3.8,4.4)*vScale();
+    for(let i=0;i<n;i++){ const a = 6.283*i/n + rand(-.1,.1);
+      SKY.add({x, y, vx:Math.cos(a)*v, vy:Math.sin(a)*v, g:.035, drag:.965, decay:.016, s:1.6, c:pick(cols), split:.55, sa:rand(0,6.283), trail:.3, tc:"#ffcf8a"}); }
+    afterBurst(x, y, cols[0]);
+  },
+  palm(x, y){
+    const arms = 8, v = rand(4.6,5.4)*vScale();
+    for(let i=0;i<arms;i++){ const a = -Math.PI/2 + (i/(arms-1) - .5)*Math.PI*1.35;
+      SKY.add({x, y, vx:Math.cos(a)*v, vy:Math.sin(a)*v - 1, g:.05, drag:.968, decay:.0085, s:2.4, c:"#ffd27a", trail:1.4, tc:"#ffb347"}); }
+    shell(30, 1.6*vScale(), (vx,vy) => SKY.add({x, y, vx, vy, g:.02, drag:.95, decay:.02, s:1.2, c:"#fff0c8"}));
+    afterBurst(x, y, "#ffb347", true);
+  },
+  strobe(x, y){
+    shell(150, rand(3.8,4.6)*vScale(), (vx,vy) => SKY.add({x, y, vx, vy, g:.025, drag:.955, decay:rand(.0075,.0095), s:1.1, c:pick(["#ffffff","#e8f0ff"]), strobe:rand(.025,.05), ph:rand(0,6.283)}));
+    afterBurst(x, y, "#e8f0ff");
   },
   heart(x, y){
-    const n = 120, v = rand(4.8,5.4)*vScale();
-    const shape = (k, cols, scale, decay) => {
+    const v = rand(4.8,5.4)*vScale();
+    const shape = (k, cols, scale, decay, pop) => {
       for(let i=0;i<k;i++){
         const t = 6.283*i/k, hx = 16*Math.pow(Math.sin(t),3), hy = -(13*Math.cos(t) - 5*Math.cos(2*t) - 2*Math.cos(3*t) - Math.cos(4*t));
-        SKY.add({x, y, vx:hx/16*v*scale, vy:hy/16*v*scale, g:.012, drag:.955, decay, s:1.9, c:pick(cols), tw:Math.random()<.25});
+        SKY.add({x, y, vx:hx/16*v*scale, vy:hy/16*v*scale, g:.012, drag:.955, decay, s:1.7, c:pick(cols), pop});
       }
     };
-    shape(n, PAL.rani, 1, .0085);
-    shape(70, PAL.gold, .58, .0095);
-    flashAt(x,y,"#ffd6ea");
+    shape(130, PAL.rani, 1, .0085, false);
+    shape(80, PAL.gold, .58, .0095, true);
+    afterBurst(x, y, "#ff3d9a", true);
   },
-  double(x, y, cols){ Bursts.peony(x, y, cols); setTimeout(() => Bursts.ring(x, y, PAL.white, cols), 160); }
+  double(x, y, cols){ Bursts.peony(x, y, cols); setTimeout(() => Bursts.ring(x, y, PAL.white, cols), 160); },
+  multibreak(x, y, cols){
+    Bursts.peony(x, y, cols);
+    setTimeout(() => { for(let k=0;k<3;k++){ const a = rand(0,6.283), d = rand(60,110)*vScale(), c2 = pick(COLOR_SETS);
+      const bx = x + Math.cos(a)*d, by = y + Math.sin(a)*d*.7;
+      shell(45, 2.4*vScale(), (vx,vy) => SKY.add({x:bx, y:by, vx, vy, g:.035, drag:.95, decay:rand(.016,.022), s:1.2, c:pick(c2)})); SKY.add({x:bx, y:by, s:10, decay:.2, c:"#fff3d6"}); } }, 380);
+  }
 };
+
+/* how each kind of shell sounds */
+function burstSound(type, at, p){
+  const size = {heart:1.2, palm:1.1, kamuro:1.05, multibreak:1, crackling:.9}[type] || rand(.6,.95);
+  Sound.burst(at, p, size);
+  switch(type){
+    case "crackling":  Sound.crackle(at + 1.05, .7, 220, p, .75); break;
+    case "heart":      Sound.crackle(at + 1.45, .6, 160, p, .55); break;
+    case "willow":     Sound.sizzle(at + .25, 3, p); break;
+    case "kamuro":     Sound.sizzle(at + .3, 3.4, p); Sound.crackle(at + .6, 2.2, 45, p, .25); break;
+    case "strobe":     Sound.sizzle(at + .2, 2.6, p); Sound.crackle(at + .3, 2.2, 70, p, .3); break;
+    case "crossette":  Sound.snaps(at + .5, p); break;
+    case "double":     Sound.burst(at + .16, p, .45); break;
+    case "multibreak": [.38,.44,.52].forEach(d => Sound.burst(at + d, p + rand(-.15,.15), .35)); break;
+    case "palm":       Sound.crackle(at + .4, 2, 40, p, .25); break;
+    default:           if(Math.random() < .35) Sound.crackle(at + rand(.5,.8), 1.6, rand(60,100), p, .4);
+  }
+}
 function launch(type, cols, o = {}){
   if(reduceMotion) return;
   const W = innerWidth, H = innerHeight;
   const x1 = o.x ?? rand(W*.12, W*.88), y1 = o.y ?? rand(H*.1, H*.36);
   const x0 = x1 + rand(-70,70), y0 = H + 10, T = o.T ?? rand(1.05,1.45);
-  SKY.rocket({x0, y0, x1, y1, T, t:0, burst:(x,y) => Bursts[type](x, y, cols)});
+  cols = cols || pick(COLOR_SETS);
+  SKY.rocket({x0, y0, x1, y1, T, t:0, ph:rand(0,6), burst:(x,y) => Bursts[type](x, y, cols)});
   const pan = v => Math.max(-.85, Math.min(.85, (v/W*2 - 1)*.9));
-  const far = rand(.06,.2);                                   // sound travels slower than light
-  const size = type === "heart" ? 1.2 : rand(.55,.95);
-  Sound.rocket(T, pan(x0), pan(x1), Math.random() < .35);
-  Sound.burst(T + far, pan(x1), size);
-  if(type === "willow") Sound.sizzle(T + far + .25, 2.8, pan(x1));
-  if(type === "double" || type === "heart" || Math.random() < .5) Sound.crackle(T + far + rand(.45,.8), 1.8, rand(60,110), pan(x1), .5);
+  Sound.rocket(T, pan(x0), pan(x1), type === "palm" ? false : Math.random() < .35);
+  burstSound(type, T + rand(.06,.2), pan(x1));      // sound travels slower than light
 }
-function randomLaunch(){
-  const r = Math.random();
-  if(r < .3) launch("peony", pick([PAL.gold, PAL.rani, PAL.teal, PAL.violet, PAL.marigold, PAL.green]));
-  else if(r < .55) launch("ring", pick([PAL.teal, PAL.rani, PAL.violet]));
-  else if(r < .78) launch("willow");
-  else launch("double", pick([PAL.rani, PAL.teal, PAL.marigold]));
-}
+const TYPES = [["peony",3],["chrys",3],["ring",2],["willow",2],["kamuro",1],["crackling",2],["crossette",2],["palm",1],["strobe",1],["double",1],["multibreak",1]];
+function randomType(){ let r = Math.random()*TYPES.reduce((s,t) => s + t[1], 0); for(const [t,w] of TYPES){ if((r -= w) < 0) return t; } return "peony"; }
+function randomLaunch(){ launch(randomType()); }
 function ambientShow(){
   clearTimeout(ambientTimer);
   if(!lit) return;
@@ -1663,18 +1939,25 @@ function lightFirework(){
   const now = performance.now();
   fuseUntil = now + 700; fountainFrom = now + 700; fountainUntil = now + 3500;
   FX.start();
+  Song.play();                                   // must run inside the tap so phones allow it
   Sound.fuse(.75); Sound.fountain(.7, 2.8);
 
   const W = innerWidth, H = innerHeight;
-  later(() => launch("peony", PAL.gold, {x:W*.24, y:H*.22, T:1.25}), 1000);
-  later(() => launch("ring", PAL.teal, {x:W*.78, y:H*.2, T:1.2}), 1450);
-  later(() => launch("heart", null, {x:W*.5, y:H*.2, T:1.45}), 1900);
+  document.body.classList.add("show");                       // fireworks fill the screen for the opening show
+  later(() => launch("peony", PAL.gold, {x:W*.22, y:H*.2, T:1.25}), 1000);
+  later(() => launch("ring", PAL.teal, {x:W*.8, y:H*.18, T:1.2}), 1450);
+  later(() => launch("heart", null, {x:W*.5, y:H*.18, T:1.45}), 1900);
   later(showNews, 3350);
-  later(() => launch("willow", null, {x:W*.32, y:H*.16}), 4200);
-  later(() => launch("double", PAL.rani, {x:W*.7, y:H*.26}), 4900);
-  later(() => launch("peony", PAL.violet), 5600);
-  later(() => launch("ring", PAL.marigold), 6200);
-  later(ambientShow, 8500);
+  later(() => launch("crossette", PAL.rani, {x:W*.25, y:H*.15}), 4300);
+  later(() => launch("palm", null, {x:W*.75, y:H*.2}), 4900);
+  later(() => launch("chrys", PAL.violet, {x:W*.4, y:H*.12}), 5600);
+  later(() => launch("strobe", null, {x:W*.65, y:H*.1}), 6200);
+  later(() => launch("kamuro", null, {x:W*.5, y:H*.14}), 6900);
+  // finale
+  const finale = ["crackling","chrys","peony","ring","crackling","multibreak","willow","double","crackling","peony","kamuro"];
+  finale.forEach((t, i) => later(() => launch(t, null, {x:W*(.12 + .76*((i*.37) % 1)), y:H*rand(.08,.3), T:rand(1,1.3)}), 8200 + i*260));
+  later(() => document.body.classList.remove("show"), 13800);
+  later(ambientShow, 14500);
 }
 function showNews(){
   lit = true;
@@ -1693,7 +1976,7 @@ $("anaar").onclick = lightFirework;
 $("againBtn").onclick = () => {
   showTimers.forEach(clearTimeout); showTimers = []; clearTimeout(ambientTimer);
   fuseUntil = fountainFrom = fountainUntil = 0;
-  SKY.clear(); FX.clear();
+  SKY.clear(); FX.clear(); Smoke.clear(); document.body.classList.remove("show");
   revealed = false; lit = false; started = false; moves = 0; lastP = 0;
   const card = $("card");
   card.classList.remove("revealed","igniting","lit");
@@ -1704,6 +1987,7 @@ $("againBtn").onclick = () => {
   $("hint").classList.remove("off");
   $("bar").style.width = "0"; $("pct").textContent = "0%";
   paintFoil(); card.scrollIntoView({behavior:"smooth",block:"center"});
+  Song.stop();
   if(Sound.ctx) Sound.startScary();
   setTimeout(() => lightning(false), 1500);
   scheduleEyes();
@@ -1721,7 +2005,7 @@ function toast(msg){ const t = $("toast"); t.textContent = msg; t.classList.add(
 /* ---------- Init ---------- */
 let rt, lastW = innerWidth;
 addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(() => {
-  sizeSky(); sizeBolt(); SKY.size(); FX.size();
+  sizeSky(); sizeBolt(); SKY.size(); FX.size(); Smoke.size();
   if(innerWidth !== lastW){ buildToran(); if(!revealed && !started) paintFoil(); }
   lastW = innerWidth;
 }, 150); });
