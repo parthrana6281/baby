@@ -647,8 +647,8 @@ body.sweet .eyes{display:none}
 const CONFIG = {
   names:          "Shivani & Parth",
 
-  // Part 1 — Halloween (before the scratch)
-  halloweenFrom:  "A Halloween message from",
+  // Part 1 —  (before the scratch)
+  halloweenFrom:  "A message from",
   headline:       "Something is coming…",
 
   // Part 2 — Diwali (after the scratch)
@@ -676,7 +676,10 @@ const CONFIG = {
   // Music that starts the moment the firework is lit (any YouTube video ID —
   // the part after "watch?v=" in the link). The Halloween part keeps its own music.
   song: {
-    youtubeId: "tCgEd5pLLy8",
+    // Put your song file (e.g. music.mp3) in the same folder as index.html and it
+    // plays hidden in the background. If the file isn't there, the YouTube video below is used.
+    file:      "music.mp3",
+    youtubeId: "rCFoSTwT1GU",
     startAt:   0,         // seconds into the song to start from
     volume:    75,        // 0–100, leaves room for the firework sounds
     label:     "Our song"
@@ -1302,14 +1305,41 @@ $("muteBtn").onclick = () => Sound.toggle();
 
 
 /* =========================================================
-   🎶 SONG — YouTube player that takes over when the firework is lit
+   🎶 SONG — starts the moment the firework is lit
+   1) If a music file sits next to index.html (CONFIG.song.file), it plays
+      invisibly in the background — nothing shows on the page.
+   2) Otherwise the YouTube player is used (YouTube requires it to be visible).
    ========================================================= */
 const Song = {
-  player:null, ready:false, failed:false, active:false, wasPlaying:false,
+  mode:null, audio:null, player:null, ready:false, failed:false, active:false, wasPlaying:false,
   init(){
-    const cfg = CONFIG.song;
-    $("songLabel").textContent = cfg.label;
-    if(!cfg || !cfg.youtubeId){ this.fail(); return; }
+    const cfg = CONFIG.song || {};
+    $("songLabel").textContent = cfg.label || "";
+    $("song").hidden = true;
+    document.addEventListener("visibilitychange", () => {
+      if(!this.active) return;
+      if(document.hidden){ this.wasPlaying = this.isPlaying(); if(this.wasPlaying) this.pause(); }
+      else if(this.wasPlaying) this.resume();
+    });
+    if(cfg.file){
+      fetch(cfg.file, { method:"HEAD", cache:"no-store" })
+        .then(r => { if(!r.ok) throw 0; this.useFile(cfg); })
+        .catch(() => this.useYouTube(cfg));
+    } else this.useYouTube(cfg);
+  },
+
+  useFile(cfg){
+    const a = this.audio = new Audio();
+    a.src = cfg.file; a.preload = "auto"; a.loop = true; a.volume = Math.min(1, (cfg.volume ?? 75)/100);
+    a.addEventListener("error", () => { if(this.mode === "file") this.fail(); });
+    a.addEventListener("playing", () => { Sound.songOn = true; });
+    this.mode = "file"; this.ready = true;
+  },
+
+  useYouTube(cfg){
+    if(!cfg.youtubeId){ this.fail(); return; }
+    this.mode = "youtube";
+    $("song").hidden = false;
     window.onYouTubeIframeAPIReady = () => {
       try{
         this.player = new YT.Player("ytPlayer", {
@@ -1317,7 +1347,7 @@ const Song = {
           playerVars: { playsinline:1, rel:0, modestbranding:1, loop:1, playlist:cfg.youtubeId, start:cfg.startAt|0,
                         ...(location.protocol.startsWith("http") ? { origin:location.origin } : {}) },
           events: {
-            onReady: () => { this.ready = true; this.player.setVolume(cfg.volume); },
+            onReady: () => { this.ready = true; this.player.setVolume(cfg.volume ?? 75); },
             onError: () => this.fail(),
             onStateChange: e => {
               const playing = e.data === 1;
@@ -1332,27 +1362,39 @@ const Song = {
     tag.src = "https://www.youtube.com/iframe_api";
     tag.onerror = () => this.fail();
     document.head.appendChild(tag);
-    document.addEventListener("visibilitychange", () => {
-      if(!this.player || !this.active) return;
-      if(document.hidden){ this.wasPlaying = this.isPlaying(); if(this.wasPlaying) this.player.pauseVideo(); }
-      else if(this.wasPlaying) this.player.playVideo();
-    });
   },
+
   fail(){
     this.failed = true; $("song").hidden = true;
-    if(this.active){ this.active = false; Sound.songOn = false; Sound.startRaga(); }
+    if(this.active){ this.active = false; Sound.songOn = false; Sound.tanpura(Sound.token); Sound.startRaga(); }
   },
-  isPlaying(){ try{ return this.player && [1,3].includes(this.player.getPlayerState()); }catch(e){ return false; } },
+  isPlaying(){
+    try{
+      if(this.mode === "file") return this.audio && !this.audio.paused;
+      return this.player && [1,3].includes(this.player.getPlayerState());
+    }catch(e){ return false; }
+  },
+  pause(){ try{ this.mode === "file" ? this.audio.pause() : this.player.pauseVideo(); }catch(e){} },
+  resume(){ try{ this.mode === "file" ? this.audio.play().catch(() => {}) : this.player.playVideo(); }catch(e){} },
+
   play(){
     if(this.failed || !this.ready) return;
+    const start = (CONFIG.song && CONFIG.song.startAt) | 0;
     this.active = true;
-    Sound.songOn = true;                               // the synthesized Diwali music steps aside
+    Sound.songOn = true;                               // the built-in Diwali music steps aside
+    if(this.mode === "file"){
+      const a = this.audio;
+      a.muted = Sound.muted;
+      try{ a.currentTime = start; }catch(e){}
+      a.play().catch(() => this.fail());
+      return;
+    }
     try{
       if(Sound.muted) this.player.mute(); else this.player.unMute();
-      this.player.seekTo(CONFIG.song.startAt|0, true);
+      this.player.seekTo(start, true);
       this.player.playVideo();
     }catch(e){}
-    // if the phone blocked playback, fall back to the built-in music and invite a tap on the video
+    // if the phone blocked YouTube, fall back to the built-in music and invite a tap on the video
     setTimeout(() => {
       if(!this.active || this.isPlaying()) return;
       Sound.songOn = false; Sound.tanpura(Sound.token); Sound.startRaga();
@@ -1360,10 +1402,19 @@ const Song = {
     }, 2800);
   },
   stop(){
+    const start = (CONFIG.song && CONFIG.song.startAt) | 0;
     this.active = false; $("songTip").hidden = true; $("song").classList.remove("playing");
-    try{ if(this.player && this.ready){ this.player.pauseVideo(); this.player.seekTo(CONFIG.song.startAt|0, true); } }catch(e){}
+    try{
+      if(this.mode === "file" && this.audio){ this.audio.pause(); this.audio.currentTime = start; }
+      else if(this.player && this.ready){ this.player.pauseVideo(); this.player.seekTo(start, true); }
+    }catch(e){}
   },
-  mute(m){ try{ if(this.player && this.ready) m ? this.player.mute() : this.player.unMute(); }catch(e){} }
+  mute(m){
+    try{
+      if(this.mode === "file" && this.audio) this.audio.muted = m;
+      else if(this.player && this.ready) m ? this.player.mute() : this.player.unMute();
+    }catch(e){}
+  }
 };
 Song.init();
 
